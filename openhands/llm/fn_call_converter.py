@@ -791,8 +791,24 @@ def convert_from_multiple_tool_calls_to_single_tool_call_messages(
             ), f'Found pending tool calls but not expect to handle it with role {role}: {pending_tool_calls=}, {message=}'
             converted_messages.append(message)
 
-    if not ignore_final_tool_result and len(pending_tool_calls) > 0:
-        raise FunctionCallConversionError(
-            f'Found pending tool calls but no tool result: {pending_tool_calls=}'
-        )
+    if len(pending_tool_calls) > 0:
+        if not ignore_final_tool_result:
+            raise FunctionCallConversionError(
+                f'Found pending tool calls but no tool result: {pending_tool_calls=}'
+            )
+        else:
+            # Add empty tool results for any pending tool calls
+            # This is necessary for models like Claude 3.7 Sonnet that require tool results
+            for tool_call_id, tool_call_message in pending_tool_calls.items():
+                # First add the tool call message
+                converted_messages.append(tool_call_message)
+                # Then add an empty tool result
+                converted_messages.append(
+                    {
+                        'role': 'tool',
+                        'tool_call_id': tool_call_id,
+                        'name': tool_call_message['tool_calls'][0]['function']['name'],
+                        'content': '',
+                    }
+                )
     return converted_messages
