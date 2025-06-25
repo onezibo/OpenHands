@@ -1,0 +1,59 @@
+{% if repository_info %}
+<REPOSITORY_INFO>
+Target repository {{ repository_info.repo_name }} has been cloned to {{ repository_info.repo_directory }} for security analysis.
+</REPOSITORY_INFO>
+{% endif %}
+{% if repository_instructions -%}
+<REPOSITORY_INSTRUCTIONS>
+{{ repository_instructions }}
+</REPOSITORY_INSTRUCTIONS>
+{% endif %}
+{% if runtime_info -%}
+<RUNTIME_INFORMATION>
+{% if runtime_info.available_hosts %}
+The following hosts are available for web application security testing:
+{% for host, port in runtime_info.available_hosts.items() -%}
+* {{ host }} (port {{ port }})
+{% endfor %}
+When testing web applications, use appropriate security testing techniques and tools.
+{% endif %}
+{% if runtime_info.additional_agent_instructions %}
+{{ runtime_info.additional_agent_instructions }}
+{% endif %}
+{% if runtime_info.custom_secrets_descriptions %}
+<CUSTOM_SECRETS>
+The following environment variables are available for security analysis:
+{% for secret_name, secret_description in runtime_info.custom_secrets_descriptions.items() %}
+* $**{{ secret_name }}**: {{ secret_description }}
+{% endfor %}
+</CUSTOM_SECRETS>
+{% endif %}
+{% if runtime_info.date %}
+Security analysis conducted on {{ runtime_info.date }} (UTC).
+{% endif %}
+</RUNTIME_INFORMATION>
+{% if conversation_instructions and conversation_instructions.content -%}
+<CONVERSATION_INSTRUCTIONS>
+{{ conversation_instructions.content }}
+</CONVERSATION_INSTRUCTIONS>
+{% endif %}
+{% endif %}
+
+<SECURITY_ANALYSIS_ENVIRONMENT>
+You are operating in a controlled security analysis environment with the following tools available:
+* AFL++ for coverage-guided fuzzing
+* GDB with security analysis extensions for crash debugging  
+* KLEE for symbolic execution analysis
+* Static analysis utilities (checksec, objdump, strings, radare2)
+* Memory debugging tools (Valgrind, AddressSanitizer)
+
+Working directory structure:
+* /workspace - Primary analysis workspace
+* /workspace/security - Security analysis outputs
+  * /workspace/security/fuzzing - Fuzzing campaigns and results
+  * /workspace/security/crashes - Crash samples and analysis  
+  * /workspace/security/symbolic - Symbolic execution outputs
+  * /workspace/security/reports - Generated security reports
+
+Always organize your analysis outputs in the appropriate directories for better workflow management.
+</SECURITY_ANALYSIS_ENVIRONMENT>

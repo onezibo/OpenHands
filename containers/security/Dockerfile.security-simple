@@ -1,0 +1,47 @@
+# SecurityAgent Docker扩展配置 - 简化版本
+# 用于快速验证和部署
+
+ARG BASE_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.44-nikolaik
+FROM ${BASE_IMAGE}
+
+# 维护者信息
+LABEL maintainer="OpenHands SecurityAgent"
+LABEL description="OpenHands Runtime with Security Analysis Tools"
+LABEL version="1.0"
+
+# 设置环境变量
+ENV DEBIAN_FRONTEND=noninteractive
+ENV AFL_SKIP_CPUFREQ=1
+ENV AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1
+ENV PYTHONPATH="${PYTHONPATH}:/workspace"
+
+# 更新包管理器并安装基础工具
+RUN apt-get update && apt-get install -y build-essential python3-dev python3-pip gcc-multilib clang llvm git wget curl gdb binutils file && rm -rf /var/lib/apt/lists/*
+
+# 安装AFL++
+RUN cd /tmp && git clone https://github.com/AFLplusplus/AFLplusplus.git && cd AFLplusplus && make distrib && make install && cd / && rm -rf /tmp/AFLplusplus
+
+# 安装checksec
+RUN cd /tmp && wget https://github.com/slimm609/checksec.sh/archive/refs/heads/main.zip && unzip main.zip && cp checksec.sh-main/checksec /usr/local/bin/ && chmod +x /usr/local/bin/checksec && rm -rf checksec.sh-main main.zip
+
+# 安装Python安全库
+RUN pip3 install --no-cache-dir pwntools capstone keystone-engine
+
+# 设置AFL++环境变量
+ENV AFL_PATH=/usr/local/lib/afl
+ENV PATH=$PATH:/usr/local/lib/afl:/usr/local/bin
+
+# 创建安全分析工作目录
+RUN mkdir -p /workspace/security/fuzzing/input /workspace/security/fuzzing/output /workspace/security/crashes /workspace/security/reports
+
+# 创建工具检查脚本
+RUN echo '#!/bin/bash\necho "=== SecurityAgent 工具检查 ==="\necho "AFL++:"; which afl-fuzz && echo "  ✓ afl-fuzz" || echo "  ✗ afl-fuzz"\necho "GDB:"; which gdb && echo "  ✓ gdb" || echo "  ✗ gdb"\necho "分析工具:"; which checksec && echo "  ✓ checksec" || echo "  ✗ checksec"\necho "Python库:"; python3 -c "import pwn; print(\"  ✓ pwntools\")" 2>/dev/null || echo "  ✗ pwntools"' > /usr/local/bin/check-security-tools && chmod +x /usr/local/bin/check-security-tools
+
+# 设置工作目录
+WORKDIR /workspace
+
+# 添加启动信息
+RUN echo 'echo "SecurityAgent环境已就绪 🔒"' >> ~/.bashrc && echo 'echo "运行 check-security-tools 检查工具状态"' >> ~/.bashrc
+
+# 默认命令
+CMD ["/bin/bash"]

@@ -2,10 +2,10 @@ SHELL=/usr/bin/env bash
 # Makefile for OpenHands project
 
 # Variables
-BACKEND_HOST ?= "127.0.0.1"
+BACKEND_HOST ?= "0.0.0.0"
 BACKEND_PORT = 3000
 BACKEND_HOST_PORT = "$(BACKEND_HOST):$(BACKEND_PORT)"
-FRONTEND_HOST ?= "127.0.0.1"
+FRONTEND_HOST ?= "0.0.0.0"
 FRONTEND_PORT = 3001
 DEFAULT_WORKSPACE_DIR = "./workspace"
 DEFAULT_MODEL = "gpt-4o"

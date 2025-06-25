@@ -1,0 +1,69 @@
+Here is an example of how to conduct a comprehensive security analysis:
+
+**User Request**: Analyze the security of `/workspace/vulnerable_server` binary
+
+**Security Analysis Process**:
+
+1. **Initial Reconnaissance**:
+```bash
+file /workspace/vulnerable_server
+checksec --file=/workspace/vulnerable_server  
+strings -n 10 /workspace/vulnerable_server | head -20
+objdump -T /workspace/vulnerable_server | grep -E 'gets|strcpy|sprintf'
+```
+
+**Analysis**: Binary is 64-bit ELF, lacks stack canaries and PIE. Found dangerous functions: gets(), strcpy().
+
+2. **Prepare Fuzzing Environment**:
+```bash
+mkdir -p /workspace/security/fuzzing/{input,output}
+echo "test" > /workspace/security/fuzzing/input/seed1
+python3 -c "print('A'*100)" > /workspace/security/fuzzing/input/seed2
+```
+
+3. **Execute Fuzzing Campaign**:
+```bash
+timeout 1800 afl-fuzz -i /workspace/security/fuzzing/input -o /workspace/security/fuzzing/output -- /workspace/vulnerable_server
+```
+
+4. **Crash Analysis**:
+```bash
+ls /workspace/security/fuzzing/output/default/crashes/ | wc -l
+```
+**Result**: Found 12 crashes
+
+```bash
+for crash in /workspace/security/fuzzing/output/default/crashes/id:000*; do
+    echo "=== Analyzing $crash ==="
+    gdb -batch \
+        -ex "file /workspace/vulnerable_server" \
+        -ex "run < $crash" \
+        -ex "bt" \
+        -ex "info registers" \
+        -ex "quit" \
+        2>&1 | tee "${crash}.analysis"
+done
+```
+
+**Analysis**: Stack overflow confirmed. RIP register contains 0x4141414141414141 (AAAA), indicating control flow hijack potential.
+
+5. **Security Assessment**:
+```bash
+echo "=== SECURITY ANALYSIS REPORT ===" > /workspace/security/reports/analysis_report.md
+echo "Target: vulnerable_server" >> /workspace/security/reports/analysis_report.md
+echo "Severity: HIGH - Stack buffer overflow with control flow hijack" >> /workspace/security/reports/analysis_report.md
+echo "" >> /workspace/security/reports/analysis_report.md
+echo "Findings:" >> /workspace/security/reports/analysis_report.md
+echo "- Dangerous function gets() used without bounds checking" >> /workspace/security/reports/analysis_report.md
+echo "- No stack protection mechanisms (canaries, FORTIFY_SOURCE)" >> /workspace/security/reports/analysis_report.md
+echo "- 12 unique crash inputs discovered in 30 minutes" >> /workspace/security/reports/analysis_report.md
+echo "- Attacker can control instruction pointer (RIP)" >> /workspace/security/reports/analysis_report.md
+echo "" >> /workspace/security/reports/analysis_report.md
+echo "Recommendations:" >> /workspace/security/reports/analysis_report.md
+echo "1. Replace gets() with fgets() or secure input functions" >> /workspace/security/reports/analysis_report.md
+echo "2. Enable stack protection: -fstack-protector-all" >> /workspace/security/reports/analysis_report.md
+echo "3. Enable FORTIFY_SOURCE: -D_FORTIFY_SOURCE=2" >> /workspace/security/reports/analysis_report.md
+echo "4. Consider enabling PIE: -pie -fPIE" >> /workspace/security/reports/analysis_report.md
+```
+
+**Final Result**: Critical security vulnerability identified with detailed remediation plan provided.

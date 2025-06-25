@@ -1,0 +1,224 @@
+# SecurityAgent Docker扩展配置
+# 用于在OpenHands运行时环境中添加安全分析工具
+
+# 基于现有的OpenHands runtime镜像
+ARG BASE_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.44-nikolaik
+FROM ${BASE_IMAGE}
+
+# 维护者信息
+LABEL maintainer="OpenHands SecurityAgent"
+LABEL description="OpenHands Runtime with Security Analysis Tools"
+LABEL version="1.0"
+
+# 设置环境变量
+ENV DEBIAN_FRONTEND=noninteractive
+ENV AFL_SKIP_CPUFREQ=1
+ENV AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1
+ENV PYTHONPATH="${PYTHONPATH}:/workspace"
+
+# 更新包管理器
+RUN apt-get update
+
+# ===== 安装基础开发工具 =====
+RUN apt-get install -y \
+    build-essential \
+    python3-dev \
+    python3-pip \
+    python3-setuptools \
+    gcc-multilib \
+    libtool \
+    automake \
+    autoconf \
+    bison \
+    libglib2.0-dev \
+    libpixman-1-dev \
+    clang \
+    llvm \
+    clang-11 \
+    llvm-11 \
+    llvm-11-dev \
+    llvm-11-tools \
+    git \
+    wget \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# ===== 安装AFL++ =====
+RUN cd /tmp && \
+    git clone https://github.com/AFLplusplus/AFLplusplus.git && \
+    cd AFLplusplus && \
+    make distrib && \
+    make install && \
+    cd / && \
+    rm -rf /tmp/AFLplusplus
+
+# ===== 安装GDB和调试工具 =====
+RUN apt-get update && apt-get install -y \
+    gdb \
+    gdb-multiarch \
+    valgrind \
+    ltrace \
+    strace \
+    && rm -rf /var/lib/apt/lists/*
+
+# 安装GDB增强插件和Python依赖
+RUN pip3 install --no-cache-dir \
+    pwntools \
+    ropper \
+    keystone-engine \
+    capstone \
+    unicorn
+
+# 安装pwndbg（GDB增强插件）
+RUN cd /opt && \
+    git clone https://github.com/pwndbg/pwndbg && \
+    cd pwndbg && \
+    ./setup.sh && \
+    echo "source /opt/pwndbg/gdbinit.py" >> ~/.gdbinit
+
+# ===== 安装KLEE依赖 =====
+RUN apt-get update && apt-get install -y \
+    z3 \
+    libz3-dev \
+    python3-z3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# 安装KLEE构建工具
+RUN pip3 install --no-cache-dir wllvm
+
+# ===== 安装二进制分析工具 =====
+RUN apt-get update && apt-get install -y \
+    file \
+    binutils \
+    binutils-dev \
+    elfutils \
+    radare2 \
+    binwalk \
+    foremost \
+    hexdump \
+    xxd \
+    && rm -rf /var/lib/apt/lists/*
+
+# 安装checksec
+RUN cd /tmp && \
+    wget https://github.com/slimm609/checksec.sh/archive/refs/heads/main.zip && \
+    unzip main.zip && \
+    cp checksec.sh-main/checksec /usr/local/bin/ && \
+    chmod +x /usr/local/bin/checksec && \
+    rm -rf checksec.sh-main main.zip
+
+# ===== 安装KLEE (简化版本) =====
+# 注意：完整的KLEE编译需要很长时间，这里提供基础配置
+# 生产环境中可能需要使用预编译版本或在独立的构建步骤中完成
+
+# 创建KLEE符号链接和基础配置
+RUN mkdir -p /opt/klee && \
+    echo "#!/bin/bash" > /usr/local/bin/klee && \
+    echo "echo 'KLEE placeholder - install full KLEE for symbolic execution'" >> /usr/local/bin/klee && \
+    echo "echo 'Use compile_for_klee() to prepare bitcode files'" >> /usr/local/bin/klee && \
+    chmod +x /usr/local/bin/klee
+
+# ktest-tool 占位符
+RUN echo "#!/bin/bash" > /usr/local/bin/ktest-tool && \
+    echo "echo 'ktest-tool placeholder - install full KLEE for test case analysis'" >> /usr/local/bin/ktest-tool && \
+    chmod +x /usr/local/bin/ktest-tool
+
+# ===== 配置环境 =====
+# 设置AFL++环境变量
+ENV AFL_PATH=/usr/local/lib/afl
+ENV PATH=$PATH:/usr/local/lib/afl:/usr/local/bin
+
+# 创建安全分析工作目录
+RUN mkdir -p /workspace/security/{fuzzing/{input,output},crashes,symbolic,reports,tools}
+
+# 设置合理的默认值
+ENV AFL_TMPDIR=/tmp
+ENV AFL_TIMEOUT=60
+
+# ===== 添加辅助脚本 =====
+# 创建安全工具检查脚本
+RUN cat > /usr/local/bin/check-security-tools << 'EOF'
+#!/bin/bash
+echo "=== SecurityAgent 工具检查 ==="
+echo ""
+
+echo "AFL++ 工具:"
+which afl-fuzz && echo "  ✓ afl-fuzz" || echo "  ✗ afl-fuzz"
+which afl-cmin && echo "  ✓ afl-cmin" || echo "  ✗ afl-cmin"
+which afl-tmin && echo "  ✓ afl-tmin" || echo "  ✗ afl-tmin"
+echo ""
+
+echo "GDB 工具:"
+which gdb && echo "  ✓ gdb" || echo "  ✗ gdb"
+test -f ~/.gdbinit && echo "  ✓ pwndbg配置" || echo "  ✗ pwndbg配置"
+echo ""
+
+echo "分析工具:"
+which checksec && echo "  ✓ checksec" || echo "  ✗ checksec"
+which objdump && echo "  ✓ objdump" || echo "  ✗ objdump"
+which readelf && echo "  ✓ readelf" || echo "  ✗ readelf"
+which file && echo "  ✓ file" || echo "  ✗ file"
+which strings && echo "  ✓ strings" || echo "  ✗ strings"
+echo ""
+
+echo "KLEE 工具:"
+which clang && echo "  ✓ clang (LLVM)" || echo "  ✗ clang"
+which klee && echo "  ✓ klee (占位符)" || echo "  ✗ klee"
+echo ""
+
+echo "Python 安全库:"
+python3 -c "import pwn; print('  ✓ pwntools')" 2>/dev/null || echo "  ✗ pwntools"
+python3 -c "import capstone; print('  ✓ capstone')" 2>/dev/null || echo "  ✗ capstone"
+python3 -c "import keystone; print('  ✓ keystone')" 2>/dev/null || echo "  ✗ keystone"
+
+echo ""
+echo "工作目录:"
+ls -la /workspace/security/ 2>/dev/null && echo "  ✓ 安全分析工作目录" || echo "  ✗ 安全分析工作目录"
+EOF
+
+RUN chmod +x /usr/local/bin/check-security-tools
+
+# 创建快速安全分析脚本
+RUN cat > /usr/local/bin/quick-security-scan << 'EOF'
+#!/bin/bash
+if [ -z "$1" ]; then
+    echo "用法: quick-security-scan <binary_file>"
+    exit 1
+fi
+
+BINARY="$1"
+echo "=== 快速安全扫描: $BINARY ==="
+echo ""
+
+echo "文件信息:"
+file "$BINARY"
+echo ""
+
+echo "安全特性:"
+checksec --file="$BINARY" 2>/dev/null || echo "checksec不可用，跳过检查"
+echo ""
+
+echo "危险函数检查:"
+objdump -T "$BINARY" 2>/dev/null | grep -E "gets|strcpy|sprintf|system" || echo "未发现明显危险函数"
+echo ""
+
+echo "基础分析完成。使用SecurityAgent进行深度分析。"
+EOF
+
+RUN chmod +x /usr/local/bin/quick-security-scan
+
+# ===== 清理和优化 =====
+RUN apt-get autoremove -y && \
+    apt-get autoclean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# 设置工作目录
+WORKDIR /workspace
+
+# 添加启动信息
+RUN echo 'echo "SecurityAgent环境已就绪 🔒"' >> ~/.bashrc
+RUN echo 'echo "运行 check-security-tools 检查工具状态"' >> ~/.bashrc
+RUN echo 'echo "运行 quick-security-scan <binary> 进行快速分析"' >> ~/.bashrc
+
+# 默认命令
+CMD ["/bin/bash"]

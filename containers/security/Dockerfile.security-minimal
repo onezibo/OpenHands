@@ -1,0 +1,73 @@
+# SecurityAgent Docker扩展配置 - 最小版本
+# 专注于核心安全工具，快速构建和验证
+
+ARG BASE_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.44-nikolaik
+FROM ${BASE_IMAGE}
+
+# 维护者信息
+LABEL maintainer="OpenHands SecurityAgent"
+LABEL description="OpenHands Runtime with Essential Security Tools"
+LABEL version="1.0"
+
+# 设置环境变量
+ENV DEBIAN_FRONTEND=noninteractive
+ENV AFL_SKIP_CPUFREQ=1
+ENV AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1
+
+# 更新包管理器并安装基础工具
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    python3-dev \
+    python3-pip \
+    clang \
+    llvm \
+    git \
+    wget \
+    gdb \
+    binutils \
+    file \
+    && rm -rf /var/lib/apt/lists/*
+
+# 安装AFL++
+RUN cd /tmp && \
+    git clone https://github.com/AFLplusplus/AFLplusplus.git && \
+    cd AFLplusplus && \
+    make distrib && \
+    make install && \
+    cd / && \
+    rm -rf /tmp/AFLplusplus
+
+# 安装Python安全库
+RUN pip3 install --no-cache-dir pwntools
+
+# 设置AFL++环境变量
+ENV AFL_PATH=/usr/local/lib/afl
+ENV PATH=$PATH:/usr/local/lib/afl:/usr/local/bin
+
+# 创建安全分析工作目录
+RUN mkdir -p /workspace/security/fuzzing/input && \
+    mkdir -p /workspace/security/fuzzing/output && \
+    mkdir -p /workspace/security/crashes && \
+    mkdir -p /workspace/security/reports
+
+# 创建简单的工具检查脚本
+RUN echo '#!/bin/bash' > /usr/local/bin/check-security-tools && \
+    echo 'echo "=== SecurityAgent 工具检查 ==="' >> /usr/local/bin/check-security-tools && \
+    echo 'echo "AFL++:"' >> /usr/local/bin/check-security-tools && \
+    echo 'which afl-fuzz && echo "  ✓ afl-fuzz" || echo "  ✗ afl-fuzz"' >> /usr/local/bin/check-security-tools && \
+    echo 'echo "GDB:"' >> /usr/local/bin/check-security-tools && \
+    echo 'which gdb && echo "  ✓ gdb" || echo "  ✗ gdb"' >> /usr/local/bin/check-security-tools && \
+    echo 'echo "分析工具:"' >> /usr/local/bin/check-security-tools && \
+    echo 'which objdump && echo "  ✓ objdump" || echo "  ✗ objdump"' >> /usr/local/bin/check-security-tools && \
+    echo 'which file && echo "  ✓ file" || echo "  ✗ file"' >> /usr/local/bin/check-security-tools && \
+    chmod +x /usr/local/bin/check-security-tools
+
+# 设置工作目录
+WORKDIR /workspace
+
+# 添加启动信息
+RUN echo 'echo "SecurityAgent环境已就绪 🔒"' >> ~/.bashrc && \
+    echo 'echo "运行 check-security-tools 检查工具状态"' >> ~/.bashrc
+
+# 默认命令
+CMD ["/bin/bash"]

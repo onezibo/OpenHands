@@ -191,6 +191,34 @@ export const handlers = [
 
     return HttpResponse.json(config);
   }),
+  http.get("/api/options/agents", () => {
+    const agents = [
+      "BrowsingAgent",
+      "CodeActAgent",
+      "DummyAgent",
+      "LocAgent",
+      "ReadonlyAgent",
+      "SecurityAgent",
+      "VisualBrowsingAgent",
+    ];
+
+    return HttpResponse.json(agents);
+  }),
+  http.get("/api/options/models", () => {
+    const models = [
+      "anthropic/claude-sonnet-4-20250514",
+      "anthropic/claude-haiku-20241022",
+      "openai/gpt-4",
+      "openai/gpt-3.5-turbo",
+    ];
+
+    return HttpResponse.json(models);
+  }),
+  http.get("/api/options/security-analyzers", () => {
+    const securityAnalyzers = ["bandit", "semgrep", "codeql"];
+
+    return HttpResponse.json(securityAnalyzers);
+  }),
   http.get("/api/settings", async () => {
     await delay();
 

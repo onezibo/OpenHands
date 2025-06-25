@@ -1,0 +1,22 @@
+{% if microagents %}
+<SECURITY_ANALYSIS_MICROAGENTS>
+The following specialized security analysis workflows are available as microagents:
+
+{% for microagent in microagents %}
+**{{ microagent.name }}** ({{ microagent.type }})
+{% if microagent.triggers %}
+Triggered by: {{ microagent.triggers | join(', ') }}
+{% endif %}
+{% if microagent.content %}
+{{ microagent.content }}
+{% endif %}
+
+{% endfor %}
+Use these microagents to guide your security analysis workflow. They contain specialized knowledge for:
+- AFL++ fuzzing campaigns and optimization strategies
+- GDB-based crash analysis and exploitability assessment  
+- KLEE symbolic execution configuration and result interpretation
+- Binary security feature analysis and vulnerability classification
+- Comprehensive security reporting and remediation guidance
+</SECURITY_ANALYSIS_MICROAGENTS>
+{% endif %}
