@@ -58,11 +58,11 @@ cd frontend && npm install <package>  # 添加前端依赖
   - `codeact_agent/` - 主要的代码执行代理
   - `browsing_agent/` - 网页浏览代理
   - `dummy_agent/` - 测试用虚拟代理
-  
+
 - **`server/`** - FastAPI HTTP服务器
   - `routes/` - API路由定义
   - `session/` - 会话管理
-  
+
 - **`controller/`** - 代理控制器，负责执行循环
   - `agent_controller.py` - 核心控制器
 
