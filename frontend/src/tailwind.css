@@ -4,19 +4,264 @@
 @config "../tailwind.config.js";
 @source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
 
-
+/* 苹果风格按钮基础样式 - 高对比度 */
 .button-base {
-  @apply bg-tertiary border border-neutral-600 rounded-xs;
+  @apply glass-apple backdrop-blur-xl rounded-lg transition-all duration-200 ease-out;
+  @apply text-white font-medium;
+  @apply hover:scale-105 active:scale-95;
+  @apply focus:outline-none focus:ring-2 focus:ring-primary/50;
 }
 
+/* 苹果风格输入框 - 高对比度 */
+.input-base {
+  @apply bg-surface-secondary border border-gray-700 rounded-lg;
+  @apply focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all duration-200 ease-out;
+  @apply text-white placeholder-gray-400;
+}
+
+/* 毛玻璃卡片样式 - 重新设计 */
+.glass-card {
+  @apply glass-apple backdrop-blur-xl rounded-xl shadow-lg;
+}
+
+.glass-card-heavy {
+  @apply glass-apple-heavy backdrop-blur-2xl rounded-2xl shadow-2xl;
+}
+
+.glass-card-light {
+  @apply glass-apple-light backdrop-blur-lg rounded-lg shadow-lg;
+}
+
+/* 苹果风格导航标签 - 高对比度 */
+.nav-tab {
+  @apply px-4 py-2 rounded-lg transition-all duration-200 ease-out;
+  @apply text-gray-200 font-medium;
+  @apply hover:bg-white/10 hover:text-white;
+  @apply focus:bg-white/15 focus:text-white;
+  @apply active:scale-95;
+}
+
+.nav-tab-active {
+  @apply bg-primary/20 text-primary border-primary/50;
+  @apply shadow-glow;
+}
+
+/* 侧边栏样式 - 苹果暗色风格 */
+.sidebar-glass {
+  @apply glass-sidebar backdrop-blur-2xl;
+  @apply shadow-2xl;
+}
+
+/* 容器毛玻璃效果 - 优化对比度 */
+.container-glass {
+  @apply glass-apple backdrop-blur-xl rounded-2xl;
+  @apply shadow-glass;
+}
+
+/* 模态框毛玻璃背景 */
+.modal-backdrop {
+  @apply backdrop-blur-md bg-black/60;
+}
+
+.modal-content {
+  @apply glass-apple-heavy backdrop-blur-2xl rounded-2xl;
+  @apply shadow-glass-lg transition-all duration-200 ease-out;
+}
+
+/* 苹果风格徽章 - 高对比度 */
+.badge-primary {
+  @apply bg-primary text-white px-2 py-1 rounded-full text-xs font-semibold;
+  @apply shadow-xl;
+}
+
+.badge-success {
+  @apply bg-success text-white px-2 py-1 rounded-full text-xs font-semibold;
+}
+
+.badge-warning {
+  @apply bg-warning text-white px-2 py-1 rounded-full text-xs font-semibold;
+}
+
+.badge-danger {
+  @apply bg-danger text-white px-2 py-1 rounded-full text-xs font-semibold;
+}
+
+/* 骨架屏效果 - 暗色优化 */
 .skeleton {
-  @apply bg-gray-400 rounded-md animate-pulse;
+  @apply bg-gray-800 rounded-lg animate-pulse;
 }
 
 .skeleton-round {
-  @apply bg-gray-400 rounded-full animate-pulse;
+  @apply bg-gray-800 rounded-full animate-pulse;
 }
 
+/* 标题样式 - 高对比度 */
 .heading {
-  @apply text-[28px] leading-8 -tracking-[0.02em] font-bold text-content-2;
+  @apply text-[28px] leading-8 -tracking-[0.02em] font-bold text-white;
+}
+
+.subheading {
+  @apply text-xl font-semibold text-gray-200;
+}
+
+/* 苹果风格分割线 */
+.divider {
+  @apply h-px bg-gray-700 border-0;
+}
+
+/* 聊天界面毛玻璃效果 */
+.chat-message {
+  @apply glass-apple-light backdrop-blur-lg rounded-2xl;
+  @apply mb-3 p-4 transition-all duration-200 ease-out;
+  @apply border border-gray-700;
+}
+
+.chat-input {
+  @apply glass-apple backdrop-blur-xl rounded-2xl;
+  @apply shadow-glass transition-all duration-200 ease-out;
+  @apply border border-gray-600;
+}
+
+/* 工具栏毛玻璃效果 */
+.toolbar-glass {
+  @apply glass-apple backdrop-blur-xl border-b border-gray-700;
+  @apply sticky top-0 z-10;
+}
+
+/* 状态指示器 - 高对比度 */
+.status-indicator {
+  @apply w-2 h-2 rounded-full;
+}
+
+.status-online {
+  @apply bg-success animate-pulse shadow-glow;
+}
+
+.status-offline {
+  @apply bg-gray-500;
+}
+
+.status-error {
+  @apply bg-danger animate-pulse;
+}
+
+/* 苹果风格加载动画 */
+.loading-spinner {
+  @apply animate-spin rounded-full border-2 border-gray-600 border-t-primary;
+}
+
+/* 代码块样式 - 暗色优化 */
+.code-block {
+  @apply bg-gray-900 rounded-lg p-4 font-mono text-sm;
+  @apply border border-gray-700 text-gray-200;
+}
+
+/* 提示框样式 */
+.tooltip {
+  @apply glass-apple backdrop-blur-lg rounded-lg px-3 py-2 text-xs;
+  @apply border border-gray-600 shadow-lg text-white;
+}
+
+/* 抽屉组件 */
+.drawer-overlay {
+  @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-40;
+}
+
+.drawer-content {
+  @apply glass-apple-heavy backdrop-blur-2xl;
+  @apply shadow-glass-lg transition-all duration-200 ease-out;
+}
+
+/* 表格样式 */
+.table-glass {
+  @apply glass-apple backdrop-blur-lg rounded-2xl;
+  @apply overflow-hidden border border-gray-700;
+}
+
+.table-header {
+  @apply bg-gray-800/60 backdrop-blur-sm;
+  @apply border-b border-gray-700;
+}
+
+/* 选项卡样式 */
+.tab-list {
+  @apply glass-apple-light backdrop-blur-lg rounded-2xl;
+  @apply p-1 border border-gray-700;
+}
+
+.tab-button {
+  @apply px-4 py-2 rounded-lg transition-all duration-200 ease-out;
+  @apply text-gray-300 font-medium;
+  @apply hover:bg-white/10 hover:text-white;
+}
+
+.tab-button-active {
+  @apply bg-primary/20 text-primary shadow-lg;
+  @apply border border-primary/30;
+}
+
+/* 高对比度按钮变体 */
+.button-primary {
+  @apply bg-primary hover:bg-primary/90 text-white font-semibold;
+  @apply rounded-lg transition-all duration-200 ease-out;
+  @apply shadow-lg hover:shadow-glow;
+}
+
+.button-secondary {
+  @apply glass-apple backdrop-blur-lg text-gray-200 font-medium;
+  @apply rounded-lg transition-all duration-200 ease-out;
+  @apply hover:bg-white/10 hover:text-white;
+}
+
+.button-outline {
+  @apply border border-gray-600 text-gray-200 font-medium;
+  @apply rounded-lg transition-all duration-200 ease-out;
+  @apply hover:border-primary hover:text-primary hover:bg-primary/10;
+}
+
+/* 输入框焦点增强 */
+.input-focus {
+  @apply focus:outline-none focus:ring-2 focus:ring-primary/50;
+  @apply focus:border-primary transition-all duration-200 ease-out;
+}
+
+/* 列表项样式 */
+.list-item {
+  @apply p-3 rounded-lg transition-all duration-200 ease-out;
+  @apply hover:bg-white/5 active:bg-white/10;
+  @apply border border-transparent hover:border-gray-700;
+}
+
+.list-item-active {
+  @apply bg-primary/15 border-primary/30 text-primary;
+}
+
+/* 面板样式 */
+.panel {
+  @apply glass-apple backdrop-blur-xl rounded-2xl;
+  @apply border border-gray-700 p-4;
+}
+
+.panel-header {
+  @apply flex items-center justify-between mb-4;
+  @apply text-white font-semibold;
+}
+
+/* 通知样式 */
+.notification-success {
+  @apply glass-apple backdrop-blur-lg rounded-lg;
+  @apply border-l-4 border-success p-4;
+  @apply text-success bg-success/10;
+}
+
+.notification-error {
+  @apply glass-apple backdrop-blur-lg rounded-lg;
+  @apply border-l-4 border-danger p-4;
+  @apply text-danger bg-danger/10;
+}
+
+.notification-warning {
+  @apply glass-apple backdrop-blur-lg rounded-lg;
+  @apply border-l-4 border-warning p-4;
+  @apply text-warning bg-warning/10;
 }

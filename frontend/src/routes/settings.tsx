@@ -54,17 +54,17 @@ function SettingsScreen() {
   return (
     <main
       data-testid="settings-screen"
-      className="bg-base-secondary border border-tertiary h-full rounded-xl flex flex-col"
+      className="container-glass h-full flex flex-col"
     >
-      <header className="px-3 py-1.5 border-b border-b-tertiary flex items-center gap-2">
-        <SettingsIcon width={16} height={16} />
-        <h1 className="text-sm leading-6">{t(I18nKey.SETTINGS$TITLE)}</h1>
-      </header>
+              <header className="px-3 py-1.5 border-b border-gray-700 flex items-center gap-2">
+          <SettingsIcon width={16} height={16} className="text-primary" />
+          <h1 className="text-sm leading-6 font-semibold text-white">{t(I18nKey.SETTINGS$TITLE)}</h1>
+        </header>
 
-      <nav
-        data-testid="settings-navbar"
-        className="flex items-end gap-6 px-9 border-b border-tertiary"
-      >
+        <nav
+          data-testid="settings-navbar"
+          className="flex items-end gap-6 px-9 border-b border-gray-700"
+        >
         {navItems.map(({ to, text }) => (
           <NavLink
             end
@@ -72,12 +72,13 @@ function SettingsScreen() {
             to={to}
             className={({ isActive }) =>
               cn(
-                "border-b-2 border-transparent py-2.5 px-4 min-w-[40px] flex items-center justify-center",
-                isActive && "border-primary",
+                "border-b-2 border-transparent py-2.5 px-4 min-w-[40px] flex items-center justify-center apple-transition",
+                "hover:bg-gray-100/10 dark:hover:bg-white/5",
+                isActive && "border-primary bg-primary/5",
               )
             }
           >
-            <span className="text-[#F9FBFE] text-sm">{text}</span>
+            <span className={cn("text-sm font-medium", "text-gray-200")}>{text}</span>
           </NavLink>
         ))}
       </nav>

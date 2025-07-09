@@ -64,8 +64,8 @@ export function Sidebar() {
   return (
     <>
       <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1">
-        <nav className="flex flex-row md:flex-col items-center justify-between w-full h-auto md:w-auto md:h-full">
-          <div className="flex flex-row md:flex-col items-center gap-[26px]">
+        <nav className="flex flex-row md:flex-col items-center justify-between w-full h-auto md:w-auto md:h-full glass-sidebar md:apple-rounded-lg apple-transition">
+          <div className="flex flex-row md:flex-col items-center gap-4 md:gap-6 md:p-4">
             <div className="flex items-center justify-center">
               <AllHandsLogoButton />
             </div>
@@ -81,7 +81,7 @@ export function Sidebar() {
             />
           </div>
 
-          <div className="flex flex-row md:flex-col md:items-center gap-[26px] md:mb-4">
+          <div className="flex flex-row md:flex-col md:items-center gap-4 md:gap-6 md:mb-4 md:p-4">
             <DocsButton disabled={settings?.EMAIL_VERIFIED === false} />
             <SettingsButton disabled={settings?.EMAIL_VERIFIED === false} />
             <UserActions

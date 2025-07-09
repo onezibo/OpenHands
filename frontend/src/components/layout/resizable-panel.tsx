@@ -165,7 +165,7 @@ export function ResizablePanel({
         {firstChild}
       </div>
       <div
-        className={`${isHorizontal ? "cursor-ew-resize w-3 flex-col" : "cursor-ns-resize h-3 flex-row"} shrink-0 flex justify-center items-center`}
+        className={`${isHorizontal ? "cursor-ew-resize w-3 flex-col" : "cursor-ns-resize h-3 flex-row"} shrink-0 flex justify-center items-center glass-apple-light backdrop-blur-lg apple-transition hover:bg-white/10 border border-gray-700`}
         onMouseDown={collapse === Collapse.SPLIT ? onMouseDown : undefined}
       >
         <IconButton

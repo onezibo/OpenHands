@@ -25,7 +25,7 @@ export function Container({
   return (
     <div
       className={clsx(
-        "bg-base-secondary border border-neutral-600 rounded-xl flex flex-col h-full",
+        "container-glass flex flex-col h-full apple-transition",
         className,
       )}
     >
@@ -47,7 +47,7 @@ export function Container({
         </div>
       )}
       {!labels && label && (
-        <div className="px-2 h-[36px] border-b border-neutral-600 text-xs flex items-center">
+        <div className="px-2 h-[36px] border-b border-gray-700 text-xs flex items-center text-gray-200 font-medium">
           {label}
         </div>
       )}
