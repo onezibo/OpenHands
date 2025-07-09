@@ -73,7 +73,7 @@ class TestAFLProcessManager(unittest.TestCase):
         if self.manager:
             try:
                 self.manager.stop_fuzzing(graceful=False)
-            except:
+            except Exception:
                 pass
 
     def test_initialization(self):

@@ -39,7 +39,7 @@ for exploit_link in extracted_links:
 
 **CVE exploit链接分析重点**：
 - **Mailing list讨论**：原始漏洞报告、技术讨论、测试用例
-- **Bug reports**：具体复现步骤、环境要求、错误信息  
+- **Bug reports**：具体复现步骤、环境要求、错误信息
 - **GitHub commits**：代码修复、测试用例、编译选项
 - **Security advisories**：官方分析、影响评估、缓解措施
 
@@ -101,15 +101,15 @@ mkdir -p ~/security_analysis/{input,output,crashes,reports,tools,cve_analysis}
 # CVE任务：基于exploit信息配置环境
 if [[ -n "$CVE_TASK" ]]; then
     echo "配置CVE复现环境..."
-    
+
     # 从exploit分析中提取的编译选项
     export CC="[从exploit中获取，如clang]"
     export CFLAGS="[从exploit中获取，如-fsanitize=address -g -O0]"
     export LDFLAGS="[从exploit链接选项]"
-    
+
     # 安装特定版本依赖（基于exploit信息）
     # apt-get install [specific-package=version]
-    
+
     # 使用exploit中的具体测试用例作为种子
     echo "[从exploit中提取的触发输入]" > ~/security_analysis/input/exploit_seed
 fi

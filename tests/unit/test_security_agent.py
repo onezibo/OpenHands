@@ -136,7 +136,6 @@ class TestSecuritySkills(unittest.TestCase):
         """测试GDB skills的导入"""
         try:
             from openhands.runtime.plugins.agent_skills.security.gdb_skills import (
-                analyze_crash,
                 extract_crash_info,
             )
 
@@ -255,7 +254,7 @@ class TestSecurityAgentPerformance(unittest.TestCase):
 
         start_time = time.time()
         try:
-            from openhands.runtime.plugins.agent_skills.security import *
+            from openhands.runtime.plugins.agent_skills.security import *  # noqa: F403, F406
 
             import_time = time.time() - start_time
 

@@ -653,12 +653,12 @@ class AFLProcessManager:
         if self.process and self.process.poll() is None:
             try:
                 self.stop_fuzzing(graceful=False)
-            except:
+            except Exception:
                 pass
 
         # 清理崩溃监控器
         if self._crash_monitor:
             try:
                 self._crash_monitor.stop_monitoring()
-            except:
+            except Exception:
                 pass

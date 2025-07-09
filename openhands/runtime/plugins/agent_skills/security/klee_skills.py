@@ -432,7 +432,7 @@ def generate_test_cases(
                     elif line.startswith('size:') and current_object is not None:
                         try:
                             current_object['size'] = int(line.split(':', 1)[1].strip())
-                        except:
+                        except (ValueError, IndexError):
                             pass
                     elif line.startswith('data:') and current_object is not None:
                         current_object['data'] = line.split(':', 1)[1].strip()
@@ -535,7 +535,7 @@ def check_klee_status(output_dir: str) -> str:
             status_info.append(f'运行状态: KLEE进程运行中 (PID: {", ".join(pids)})')
         else:
             status_info.append('运行状态: 未发现运行中的KLEE进程')
-    except:
+    except (subprocess.SubprocessError, OSError):
         status_info.append('运行状态: 无法检查进程状态')
 
     # 检查输出文件
@@ -564,7 +564,7 @@ def check_klee_status(output_dir: str) -> str:
             last_update = datetime.datetime.fromtimestamp(latest_time)
             status_info.append(f'最近更新: {last_update.strftime("%Y-%m-%d %H:%M:%S")}')
             status_info.append(f'最新文件: {os.path.basename(latest_file)}')
-    except:
+    except (OSError, ValueError):
         status_info.append('无法获取文件更新时间')
 
     return '\\n'.join(status_info)

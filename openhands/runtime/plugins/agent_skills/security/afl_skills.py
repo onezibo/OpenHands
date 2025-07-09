@@ -10,8 +10,6 @@ import time
 from typing import Optional
 
 
-
-
 def start_fuzzing_interactive(
     binary: str,
     input_dir: str,
@@ -77,14 +75,14 @@ def start_fuzzing_interactive(
     cmd.extend(['--', binary, '@@'])
 
     # 显示启动信息
-    print(f"🚀 启动AFL++模糊测试...")
-    print(f"📁 目标程序: {binary}")
-    print(f"📂 输入目录: {input_dir}")
-    print(f"📊 输出目录: {output_dir}")
+    print('🚀 启动AFL++模糊测试...')
+    print(f'📁 目标程序: {binary}')
+    print(f'📂 输入目录: {input_dir}')
+    print(f'📊 输出目录: {output_dir}')
     if cores > 1:
-        print(f"🔧 使用 {cores} 个CPU核心（主fuzzer模式）")
-    print(f"⏱️  超时时间: {timeout}秒 ({timeout//3600}小时)")
-    print(f"💡 提示: 按Ctrl+C可以安全中断\n")
+        print(f'🔧 使用 {cores} 个CPU核心（主fuzzer模式）')
+    print(f'⏱️  超时时间: {timeout}秒 ({timeout // 3600}小时)')
+    print('💡 提示: 按Ctrl+C可以安全中断\n')
 
     # 记录开始时间
     start_time = time.time()
@@ -92,27 +90,27 @@ def start_fuzzing_interactive(
     try:
         # 直接运行，不捕获输出，让AFL++控制终端
         exit_code = subprocess.call(cmd)
-        
+
         # 计算运行时间
         duration = time.time() - start_time
-        
+
         # 收集结果
         crash_info = _check_crashes_exist(output_dir)
-        
+
         if exit_code == 124:  # timeout的退出码
             return f"""⏱️  AFL++运行超时
-运行时长: {duration:.2f}秒 ({duration//3600:.0f}小时{(duration%3600)//60:.0f}分钟)
+运行时长: {duration:.2f}秒 ({duration // 3600:.0f}小时{(duration % 3600) // 60:.0f}分钟)
 发现crashes: {crash_info['total_crashes']}个
 输出目录: {output_dir}"""
         elif exit_code == 0 or crash_info['found_crashes']:
-            crash_details = ""
+            crash_details = ''
             if crash_info['found_crashes']:
-                crash_details = f"\n🎯 发现 {crash_info['total_crashes']} 个crash!"
+                crash_details = f'\n🎯 发现 {crash_info["total_crashes"]} 个crash!'
                 for fuzzer, details in crash_info['crash_details'].items():
-                    crash_details += f"\n   - {fuzzer}: {details['count']}个"
-                    
+                    crash_details += f'\n   - {fuzzer}: {details["count"]}个'
+
             return f"""✅ AFL++运行完成
-运行时长: {duration:.2f}秒 ({duration//3600:.0f}小时{(duration%3600)//60:.0f}分钟)
+运行时长: {duration:.2f}秒 ({duration // 3600:.0f}小时{(duration % 3600) // 60:.0f}分钟)
 退出码: {exit_code}{crash_details}
 输出目录: {output_dir}"""
         else:
@@ -121,13 +119,13 @@ def start_fuzzing_interactive(
 运行时长: {duration:.2f}秒
 输出目录: {output_dir}
 请检查错误信息"""
-            
+
     except KeyboardInterrupt:
         duration = time.time() - start_time
         crash_info = _check_crashes_exist(output_dir)
-        
+
         return f"""🛑 用户中断AFL++
-运行时长: {duration:.2f}秒 ({duration//3600:.0f}小时{(duration%3600)//60:.0f}分钟)
+运行时长: {duration:.2f}秒 ({duration // 3600:.0f}小时{(duration % 3600) // 60:.0f}分钟)
 发现crashes: {crash_info['total_crashes']}个
 输出目录: {output_dir}
 提示: 可以使用 'afl-fuzz -i- -o {output_dir} -- {binary} @@' 恢复fuzzing"""
@@ -534,10 +532,6 @@ def _check_crashes_exist(output_dir: str) -> dict:
     }
 
 
-
-
-
-
 def start_fuzzing_with_crash_wait(
     binary: str,
     input_dir: str,
@@ -572,7 +566,7 @@ def start_fuzzing_with_crash_wait(
     """
     # 使用wait_timeout或默认timeout
     actual_timeout = wait_timeout if wait_timeout is not None else timeout
-    
+
     # 直接调用交互式版本
     return start_fuzzing_interactive(
         binary=binary,
