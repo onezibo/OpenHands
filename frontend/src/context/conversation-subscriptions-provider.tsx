@@ -226,17 +226,21 @@ export function ConversationSubscriptionsProvider({
         });
 
         socket.on("connect_error", (error) => {
-          console.warn(
-            `Socket for conversation ${conversationId} CONNECTION ERROR:`,
-            error,
-          );
+          if (process.env.NODE_ENV === "development") {
+            console.warn(
+              `Socket for conversation ${conversationId} CONNECTION ERROR:`,
+              error,
+            );
+          }
         });
 
         socket.on("disconnect", (reason) => {
-          console.warn(
-            `Socket for conversation ${conversationId} DISCONNECTED! Reason:`,
-            reason,
-          );
+          if (process.env.NODE_ENV === "development") {
+            console.warn(
+              `Socket for conversation ${conversationId} DISCONNECTED! Reason:`,
+              reason,
+            );
+          }
           setConversationSockets((prev) => {
             // Make sure the conversation still exists in our state
             if (!prev[conversationId]) return prev;

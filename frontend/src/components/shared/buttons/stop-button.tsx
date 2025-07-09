@@ -15,7 +15,7 @@ export function StopButton({ isDisabled, onClick }: StopButtonProps) {
       disabled={isDisabled}
       onClick={onClick}
       type="button"
-      className="border border-white rounded-lg w-6 h-6 flex items-center justify-center cursor-pointer apple-transition 
+      className="border border-white rounded-lg w-6 h-6 flex items-center justify-center cursor-pointer apple-transition
                  hover:bg-danger/20 hover:border-danger hover:scale-105
                  focus:bg-danger/20 focus:border-danger focus:ring-2 focus:ring-danger/40 focus:outline-none
                  active:scale-95

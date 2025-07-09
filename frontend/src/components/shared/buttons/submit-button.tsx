@@ -15,7 +15,7 @@ export function SubmitButton({ isDisabled, onClick }: SubmitButtonProps) {
       disabled={isDisabled}
       onClick={onClick}
       type="submit"
-      className="border border-white rounded-lg w-6 h-6 flex items-center justify-center cursor-pointer apple-transition 
+      className="border border-white rounded-lg w-6 h-6 flex items-center justify-center cursor-pointer apple-transition
                  hover:bg-neutral-500 hover:border-neutral-300 hover:scale-105
                  focus:bg-primary/20 focus:border-primary focus:ring-2 focus:ring-primary/40 focus:outline-none
                  active:scale-95
