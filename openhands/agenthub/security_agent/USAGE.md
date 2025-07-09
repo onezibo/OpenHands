@@ -170,7 +170,7 @@ SecurityAgent使用多种工具进行综合安全分析：
 check_binary_security("/path/to/binary")
 # 检查：NX、PIE、RELRO、Stack Canary等安全特性
 
-find_dangerous_functions("/path/to/binary") 
+find_dangerous_functions("/path/to/binary")
 # 识别：gets、strcpy、sprintf等危险函数
 
 extract_functions("/path/to/binary")
@@ -185,7 +185,7 @@ extract_functions("/path/to/binary")
 # 启动AFL++模糊测试
 start_fuzzing(
     binary="/path/to/target",
-    input_dir="/path/to/seeds", 
+    input_dir="/path/to/seeds",
     output_dir="/path/to/output",
     cores=4,           # 4核并行
     timeout=7200       # 2小时
@@ -206,7 +206,7 @@ collect_crashes("/path/to/output")
 # 分析单个崩溃
 analyze_crash(
     binary="/path/to/target",
-    crash_file="/path/to/crash", 
+    crash_file="/path/to/crash",
     timeout=30
 )
 
@@ -311,7 +311,7 @@ afl-cmin -i raw_seeds -o optimized_seeds -- ./target @@
    ```bash
    # 检查插桩是否正确
    ./target < seed_input  # 应该正常运行
-   
+
    # 检查权限和环境
    export AFL_SKIP_CPUFREQ=1
    ```
@@ -361,15 +361,15 @@ watch -n 5 afl-whatsup output
 def custom_security_workflow(target_binary):
     # 1. 基础检查
     security_check = check_binary_security(target_binary)
-    
+
     # 2. 根据结果选择策略
     if "No PIE" in security_check:
         # 优先进行ROP链分析
         rop_analysis = find_rop_gadgets(target_binary)
-    
+
     # 3. 执行针对性测试
     # ...
-    
+
     return comprehensive_report
 ```
 

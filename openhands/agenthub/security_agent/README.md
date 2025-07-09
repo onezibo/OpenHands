@@ -5,7 +5,7 @@ SecurityAgent是基于OpenHands架构的专业安全分析代理，专门用于�
 ## 功能特性
 
 - **模糊测试 (Fuzzing)**: 集成AFL++进行智能模糊测试
-- **崩溃分析**: 使用GDB进行深度崩溃分析和可利用性评估  
+- **崩溃分析**: 使用GDB进行深度崩溃分析和可利用性评估
 - **符号执行**: 基于KLEE的符号执行分析
 - **静态分析**: 二进制文件安全特性检查
 - **智能报告**: 自动生成详细的安全分析报告
@@ -17,7 +17,7 @@ SecurityAgent/
 ├── security_agent.py      # 主要Agent类（继承自CodeActAgent）
 ├── prompts/               # 安全分析专用提示词模板
 │   ├── system_prompt.j2
-│   ├── user_prompt.j2  
+│   ├── user_prompt.j2
 │   └── ...
 └── README.md             # 本文件
 ```

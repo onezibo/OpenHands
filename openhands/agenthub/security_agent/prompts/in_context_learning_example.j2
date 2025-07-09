@@ -7,7 +7,7 @@ Here is an example of how to conduct a comprehensive security analysis:
 1. **Initial Reconnaissance**:
 ```bash
 file /workspace/vulnerable_server
-checksec --file=/workspace/vulnerable_server  
+checksec --file=/workspace/vulnerable_server
 strings -n 10 /workspace/vulnerable_server | head -20
 objdump -T /workspace/vulnerable_server | grep -E 'gets|strcpy|sprintf'
 ```

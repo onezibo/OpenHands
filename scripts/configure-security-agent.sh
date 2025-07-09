@@ -21,17 +21,17 @@ if docker images | grep -q "openhands-security"; then
     docker images | grep openhands-security
 else
     echo "📦 未找到 openhands-security 镜像，开始构建..."
-    
+
     # 检查是否在 OpenHands 项目目录中
     if [ ! -f "containers/security/Dockerfile.security-minimal" ]; then
         echo "❌ 未找到 SecurityAgent Dockerfile"
         echo "请确保在 OpenHands 项目根目录中运行此脚本"
         exit 1
     fi
-    
+
     echo "正在构建安全工具镜像（这可能需要几分钟）..."
     docker build -t openhands-security:latest -f containers/security/Dockerfile.security-minimal .
-    
+
     if [ $? -eq 0 ]; then
         echo "✅ 安全工具镜像构建成功"
     else

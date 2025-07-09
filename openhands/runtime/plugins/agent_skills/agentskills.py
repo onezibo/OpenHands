@@ -24,6 +24,19 @@ except ImportError:
     # If repo_ops is not available, we just skip importing it.
     pass
 
+try:
+    from openhands.runtime.plugins.agent_skills import security
+
+    import_functions(
+        module=security, function_names=security.__all__, target_globals=globals()
+    )
+
+    __all__ += security.__all__
+except ImportError:
+    # If security skills are not available (e.g., missing AFL++, GDB, etc.),
+    # we just skip importing them to avoid breaking other functionality.
+    pass
+
 
 DOCUMENTATION = ''
 for func_name in __all__:

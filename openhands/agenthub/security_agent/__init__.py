@@ -4,8 +4,9 @@
 用于漏洞发现、崩溃分析、符号执行等防御性安全任务。
 """
 
-from .security_agent import SecurityAgent
 from openhands.controller.agent import Agent
+
+from .security_agent import SecurityAgent
 
 # 注册SecurityAgent到代理系统
 Agent.register('SecurityAgent', SecurityAgent)
