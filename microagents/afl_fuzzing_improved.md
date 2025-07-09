@@ -37,7 +37,7 @@ if success:
         check_interval=120,  # 每2分钟检查一次
         max_wait=1800       # 最多等待30分钟
     )
-    
+
     if results.get('crashes_found', 0) > 0:
         print(f"发现 {results['crashes_found']} 个崩溃！")
         print("崩溃文件:", results['crash_files'])
@@ -137,7 +137,7 @@ make clean && make
 # 启动AFL++智能模糊测试
 result = agent.start_afl_fuzzing(
     target_binary="./pngtest",
-    input_dir="./fuzzing/input", 
+    input_dir="./fuzzing/input",
     output_dir="./fuzzing/output",
     timeout=3600,  # 1小时超时
     additional_args=[
@@ -148,27 +148,27 @@ result = agent.start_afl_fuzzing(
 
 if result:
     print("AFL++智能模糊测试启动成功")
-    
+
     # 等待结果或用户中断
     try:
         final_results = agent.wait_for_afl_results(
             check_interval=180,  # 3分钟检查间隔
             max_wait=3600       # 1小时最大等待
         )
-        
+
         print("\n=== 模糊测试结果 ===")
         print(f"发现崩溃: {final_results.get('crashes_found', 0)}个")
         print(f"是否超时: {final_results.get('timeout', False)}")
-        
+
         if final_results.get('crashes_found', 0) > 0:
             print("\n发现的崩溃文件:")
             for crash_file in final_results.get('crash_files', []):
                 print(f"  - {crash_file}")
-                
+
         # 分析崩溃（如果有）
         if final_results.get('crashes_found', 0) > 0:
             analyze_crashes_with_gdb(final_results['crash_files'])
-            
+
     except KeyboardInterrupt:
         print("\n用户中断，正在停止AFL++...")
         agent.stop_afl_fuzzing(graceful=True)
@@ -183,7 +183,7 @@ def analyze_crashes_with_gdb(crash_files):
     """使用GDB分析崩溃文件"""
     for crash_file in crash_files[:5]:  # 只分析前5个
         print(f"\n分析崩溃文件: {crash_file}")
-        
+
         # 使用GDB分析
         gdb_cmd = f"""
         gdb -batch -ex "run < {crash_file}" \\
@@ -192,10 +192,10 @@ def analyze_crashes_with_gdb(crash_files):
             -ex "quit" \\
             ./pngtest
         """
-        
-        result = subprocess.run(gdb_cmd, shell=True, 
+
+        result = subprocess.run(gdb_cmd, shell=True,
                               capture_output=True, text=True)
-        
+
         print("GDB分析结果:")
         print(result.stdout)
         if result.stderr:
@@ -214,7 +214,7 @@ configs = [
         "args": ["-M", "main", "-d"]  # 主模糊器，确定性
     },
     {
-        "name": "slave1", 
+        "name": "slave1",
         "args": ["-S", "slave1"]      # 从模糊器1
     },
     {
@@ -232,7 +232,7 @@ configs = [
 # 环境变量优化
 env_vars = {
     "AFL_TMPDIR": "/dev/shm",        # 使用内存文件系统
-    "AFL_SKIP_CPUFREQ": "1",         # 跳过CPU频率检查  
+    "AFL_SKIP_CPUFREQ": "1",         # 跳过CPU频率检查
     "AFL_DISABLE_TRIM": "1",         # 禁用文件裁剪加速
     "AFL_NO_AFFINITY": "1"           # 禁用CPU亲和性
 }
@@ -240,7 +240,7 @@ env_vars = {
 result = agent.start_afl_fuzzing(
     target_binary="./target",
     input_dir="./input",
-    output_dir="./output", 
+    output_dir="./output",
     env_vars=env_vars
 )
 ```
@@ -256,7 +256,7 @@ def fuzz_png_library():
         "-t", "1000",                     # 1秒超时
         "-m", "200"                       # 200MB内存限制
     ]
-    
+
     return agent.start_afl_fuzzing(
         target_binary="./pngtest",
         input_dir="./png_seeds",
@@ -272,11 +272,11 @@ def fuzz_png_library():
 ```python
 def generate_fuzzing_report():
     status = agent.get_afl_status()
-    
+
     report = f"""
     AFL++模糊测试报告
     ==================
-    
+
     测试状态: {status.get('state', '未知')}
     执行速度: {status.get('stats', {}).get('exec_speed', 0):.1f} exec/sec
     总执行次数: {status.get('stats', {}).get('total_execs', 0)}
@@ -285,11 +285,11 @@ def generate_fuzzing_report():
     发现挂起: {status.get('stats', {}).get('hangs_found', 0)}
     覆盖率: {status.get('stats', {}).get('coverage', 0):.2f}%
     稳定性: {status.get('stats', {}).get('stability', 0):.2f}%
-    
+
     最近活动:
     {status.get('recent_activity', '无')}
     """
-    
+
     print(report)
     return report
 ```
@@ -303,35 +303,35 @@ def continuous_monitoring(duration_minutes=60):
     """持续监控AFL++运行状态"""
     start_time = time.time()
     end_time = start_time + (duration_minutes * 60)
-    
+
     print(f"开始持续监控AFL++运行状态，持续{duration_minutes}分钟...")
-    
+
     while time.time() < end_time:
         try:
             # 获取当前状态
             status = agent.get_afl_status()
             progress = agent.get_afl_progress_message()
-            
+
             print(f"[{time.strftime('%H:%M:%S')}] {progress}")
-            
+
             # 检查是否完成或出错
             if status.get('state') in ['finished', 'error', 'terminated']:
                 print(f"AFL++运行结束，状态: {status.get('state')}")
                 break
-                
+
             # 每5分钟报告一次详细状态
             if int(time.time()) % 300 == 0:
                 generate_fuzzing_report()
-            
+
             time.sleep(60)  # 每分钟检查一次
-            
+
         except KeyboardInterrupt:
             print("\n监控被用户中断")
             break
         except Exception as e:
             print(f"监控出错: {e}")
             time.sleep(60)
-    
+
     print("监控结束")
 ```
 
@@ -343,7 +343,7 @@ def continuous_monitoring(duration_minutes=60):
 # 设置合理的超时时间
 timeouts = {
     "quick_test": 300,      # 5分钟快速测试
-    "standard": 1800,       # 30分钟标准测试  
+    "standard": 1800,       # 30分钟标准测试
     "extended": 7200,       # 2小时扩展测试
     "overnight": 28800      # 8小时过夜测试
 }
@@ -365,13 +365,13 @@ def cleanup_fuzzing_session():
     try:
         # 停止AFL++
         agent.stop_afl_fuzzing(graceful=True)
-        
+
         # 可选：压缩输出结果
         import shutil
         shutil.make_archive('./fuzz_results', 'zip', './fuzzing/output')
-        
+
         print("模糊测试会话清理完成")
-        
+
     except Exception as e:
         print(f"清理过程中出错: {e}")
 
@@ -386,32 +386,32 @@ atexit.register(cleanup_fuzzing_session)
 def robust_fuzzing():
     """健壮的模糊测试实现"""
     max_retries = 3
-    
+
     for attempt in range(max_retries):
         try:
             print(f"尝试启动AFL++（第{attempt+1}次）...")
-            
+
             success = agent.start_afl_fuzzing(
                 target_binary="./target",
-                input_dir="./input", 
+                input_dir="./input",
                 output_dir="./output",
                 timeout=1800
             )
-            
+
             if success:
                 print("AFL++启动成功，开始监控...")
                 results = agent.wait_for_afl_results()
                 return results
             else:
                 print(f"第{attempt+1}次启动失败")
-                
+
         except Exception as e:
             print(f"第{attempt+1}次尝试出错: {e}")
-            
+
         if attempt < max_retries - 1:
             print("等待10秒后重试...")
             time.sleep(10)
-    
+
     print("所有尝试都失败了")
     return None
 ```
@@ -427,18 +427,18 @@ AFL++智能模糊测试完整示例
 
 def main():
     print("=== AFL++智能模糊测试开始 ===")
-    
+
     # 1. 环境检查
     print("1. 检查环境...")
     tools_status = agent.get_security_tools_status()
     if not tools_status.get('afl++', False):
         print("错误：AFL++不可用")
         return
-    
+
     # 2. 准备测试数据
     print("2. 准备测试数据...")
     prepare_png_seeds()
-    
+
     # 3. 启动模糊测试
     print("3. 启动AFL++模糊测试...")
     success = agent.start_afl_fuzzing(
@@ -448,11 +448,11 @@ def main():
         timeout=3600,
         additional_args=["-d", "-x", "./dictionaries/png.dict"]
     )
-    
+
     if not success:
         print("AFL++启动失败")
         return
-    
+
     # 4. 监控和等待
     print("4. 监控模糊测试进度...")
     try:
@@ -460,15 +460,15 @@ def main():
             check_interval=300,  # 5分钟间隔
             max_wait=3600       # 1小时最大等待
         )
-        
+
         # 5. 分析结果
         print("5. 分析结果...")
         analyze_results(results)
-        
+
     except KeyboardInterrupt:
         print("\n用户中断，停止模糊测试...")
         agent.stop_afl_fuzzing(graceful=True)
-    
+
     print("=== AFL++智能模糊测试完成 ===")
 
 def prepare_png_seeds():

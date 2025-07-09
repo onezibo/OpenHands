@@ -17,7 +17,31 @@ triggers:
 
 ## 1. 初始侦察阶段
 
-### 1.1 目标识别和基础信息收集
+### 1.1 CVE任务专用：Exploit链接分析（适用于CVE复现任务）
+
+```bash
+# CVE信息收集和exploit链接提取
+echo "任务类型: CVE复现分析"
+echo "目标CVE: [如 CVE-2018-17942]"
+
+# 使用WebFetch分析CVE页面，提取exploit链接
+# WebFetch(url="https://nvd.nist.gov/vuln/detail/CVE-YYYY-NNNNN", 
+#          prompt="提取所有标记为exploit的链接以及其他技术参考链接")
+
+# 分析每个exploit链接的内容
+for exploit_link in extracted_links:
+    echo "分析链接: $exploit_link"
+    # WebFetch(url=$exploit_link, 
+    #          prompt="提取CVE复现步骤、触发条件、测试用例和技术细节")
+```
+
+**CVE exploit链接分析重点**：
+- **Mailing list讨论**：原始漏洞报告、技术讨论、测试用例
+- **Bug reports**：具体复现步骤、环境要求、错误信息  
+- **GitHub commits**：代码修复、测试用例、编译选项
+- **Security advisories**：官方分析、影响评估、缓解措施
+
+### 1.2 目标识别和基础信息收集
 
 ```bash
 # 文件类型和架构分析
@@ -27,11 +51,11 @@ strings -n 10 target_binary | head -50
 # 动态链接库依赖
 ldd target_binary
 
-# 基础安全特性检查  
+# 基础安全特性检查
 checksec --file=target_binary
 ```
 
-### 1.2 安全机制检查
+### 1.3 安全机制检查
 
 ```bash
 # 手动检查（如果checksec不可用）
@@ -40,7 +64,7 @@ readelf -l target_binary | grep -E 'GNU_STACK|GNU_RELRO'
 objdump -T target_binary | grep __stack_chk_fail
 ```
 
-### 1.3 函数和符号分析
+### 1.4 函数和符号分析
 
 ```bash
 # 导出函数分析
@@ -55,25 +79,42 @@ objdump -d target_binary | grep -A 50 '<main>:'
 
 ## 2. 分析策略选择
 
-### 2.1 决策矩阵
+### 2.1 CVE任务增强决策矩阵
 
-| 条件 | 推荐策略 | 工具组合 |
-|------|----------|----------|
-| 有源码 + 小程序 | 白盒fuzzing + 符号执行 | AFL++ (插桩) + KLEE |
-| 有源码 + 大程序 | 白盒fuzzing + 静态分析 | AFL++ (插桩) + 手工审计 |
-| 无源码 + 小程序 | 黑盒fuzzing + 动态分析 | AFL++ (QEMU) + GDB |
-| 无源码 + 大程序 | 目标fuzzing + 热点分析 | AFL++ (QEMU) + 覆盖率分析 |
-| 网络服务 | 协议fuzzing + 状态分析 | AFL++ (网络模式) + 协议分析 |
+| 条件 | 推荐策略 | 工具组合 | CVE专用增强 |
+|------|----------|----------|-------------|
+| CVE + 有exploit链接 | Exploit引导复现 | WebFetch + 精确复现 + AFL++ | 优先使用exploit中的测试用例 |
+| 有源码 + 小程序 | 白盒fuzzing + 符号执行 | AFL++ (插桩) + KLEE | 基于exploit信息调整种子 |
+| 有源码 + 大程序 | 白盒fuzzing + 静态分析 | AFL++ (插桩) + 手工审计 | 重点分析exploit提及的函数 |
+| 无源码 + 小程序 | 黑盒fuzzing + 动态分析 | AFL++ (QEMU) + GDB | 使用exploit编译选项重构环境 |
+| 无源码 + 大程序 | 目标fuzzing + 热点分析 | AFL++ (QEMU) + 覆盖率分析 | 专注exploit涉及的代码路径 |
+| 网络服务 | 协议fuzzing + 状态分析 | AFL++ (网络模式) + 协议分析 | 分析exploit中的网络交互 |
 
 ### 2.2 环境准备
 
 ```bash
 # 创建标准化工作目录
-mkdir -p ~/security_analysis/{input,output,crashes,reports,tools}
+mkdir -p ~/security_analysis/{input,output,crashes,reports,tools,cve_analysis}
 
-# 源码编译（如可用）
-export CC=afl-clang-fast
-export CXX=afl-clang-fast++
+# CVE任务：基于exploit信息配置环境
+if [[ -n "$CVE_TASK" ]]; then
+    echo "配置CVE复现环境..."
+    
+    # 从exploit分析中提取的编译选项
+    export CC="[从exploit中获取，如clang]"
+    export CFLAGS="[从exploit中获取，如-fsanitize=address -g -O0]"
+    export LDFLAGS="[从exploit链接选项]"
+    
+    # 安装特定版本依赖（基于exploit信息）
+    # apt-get install [specific-package=version]
+    
+    # 使用exploit中的具体测试用例作为种子
+    echo "[从exploit中提取的触发输入]" > ~/security_analysis/input/exploit_seed
+fi
+
+# 常规源码编译（如可用）
+export CC=${CC:-afl-clang-fast}
+export CXX=${CXX:-afl-clang-fast++}
 ./configure --disable-shared
 make clean && make
 
