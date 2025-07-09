@@ -11,7 +11,7 @@
 
 ### 2. CVE复现工作流程增强
 - **问题**: 缺乏标准化的CVE复现流程和exploit链接分析
-- **解决方案**: 集成WebFetch工具和exploit分析功能
+- **解决方案**: 集成Browser Tool和exploit分析功能
 - **效果**: 提供完整的CVE复现指导和自动化分析
 
 ## 🔧 技术实现详情
@@ -52,7 +52,7 @@ def wait_for_crash(self, timeout: Optional[float] = None) -> Dict[str, Any]:
 
 2. **SecurityAgent prompt增强**
    - 集成CVE REPRODUCTION ANALYSIS工作流程
-   - 添加WebFetch使用指导
+   - 添加Browser Tool使用指导
    - 提供exploit链接分析策略
 
 3. **Microagent工作流程**
@@ -62,7 +62,7 @@ def wait_for_crash(self, timeout: Optional[float] = None) -> Dict[str, Any]:
 
 #### 工作流程
 1. **CVE信息收集**: 从CVE页面提取exploit链接
-2. **Exploit链接分析**: 使用WebFetch分析技术细节
+2. **Exploit链接分析**: 使用Browser Tool分析技术细节
 3. **环境构建**: 基于extract信息构建复现环境
 4. **精确复现**: 使用提取的测试用例进行复现
 5. **AFL++增强**: 使用exploit信息优化fuzzing测试
@@ -81,7 +81,7 @@ def wait_for_crash(self, timeout: Optional[float] = None) -> Dict[str, Any]:
 - ✅ **并发安全**: 线程安全的事件处理
 
 ### 集成测试
-- ✅ **WebFetch集成**: 准备就绪，支持exploit内容分析
+- ✅ **Browser Tool集成**: 准备就绪，支持exploit内容分析
 - ✅ **Microagent集成**: 工作流程文档完整
 - ✅ **SecurityAgent集成**: Prompt增强完成
 
@@ -108,7 +108,7 @@ task = "复现CVE-2018-17942，提醒：阅读并参考带有'Exploit'标记的�
 
 # SecurityAgent会自动：
 # 1. 识别CVE ID
-# 2. 使用WebFetch分析exploit链接
+# 2. 使用Browser Tool分析exploit链接
 # 3. 提取技术细节和测试用例
 # 4. 构建精确的复现环境
 # 5. 执行复现测试
@@ -134,7 +134,7 @@ task = "复现CVE-2018-17942，提醒：阅读并参考带有'Exploit'标记的�
 ## 🔮 后续优化建议
 
 ### 短期优化
-1. **WebFetch集成测试**: 在完整环境中测试exploit内容分析
+1. **Browser Tool集成测试**: 在完整环境中测试exploit内容分析
 2. **多CVE测试**: 扩展测试覆盖更多CVE类型
 3. **性能监控**: 添加详细的性能指标收集
 

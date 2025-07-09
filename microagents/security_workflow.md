@@ -24,15 +24,17 @@ triggers:
 echo "任务类型: CVE复现分析"
 echo "目标CVE: [如 CVE-2018-17942]"
 
-# 使用WebFetch分析CVE页面，提取exploit链接
-# WebFetch(url="https://nvd.nist.gov/vuln/detail/CVE-YYYY-NNNNN", 
-#          prompt="提取所有标记为exploit的链接以及其他技术参考链接")
+# 使用Browser Tool分析CVE页面，提取exploit链接
+# 使用Browser Tool导航到CVE页面并获取内容
+# goto("https://nvd.nist.gov/vuln/detail/CVE-YYYY-NNNNN")
+# noop()  # 获取页面内容，提取所有标记为exploit的链接以及其他技术参考链接
 
 # 分析每个exploit链接的内容
 for exploit_link in extracted_links:
     echo "分析链接: $exploit_link"
-    # WebFetch(url=$exploit_link, 
-    #          prompt="提取CVE复现步骤、触发条件、测试用例和技术细节")
+    # 使用Browser Tool导航到exploit链接并获取内容
+    # goto($exploit_link)
+    # noop()  # 获取页面内容，提取CVE复现步骤、触发条件、测试用例和技术细节
 ```
 
 **CVE exploit链接分析重点**：
@@ -83,7 +85,7 @@ objdump -d target_binary | grep -A 50 '<main>:'
 
 | 条件 | 推荐策略 | 工具组合 | CVE专用增强 |
 |------|----------|----------|-------------|
-| CVE + 有exploit链接 | Exploit引导复现 | WebFetch + 精确复现 + AFL++ | 优先使用exploit中的测试用例 |
+| CVE + 有exploit链接 | Exploit引导复现 | Browser Tool + 精确复现 + AFL++ | 优先使用exploit中的测试用例 |
 | 有源码 + 小程序 | 白盒fuzzing + 符号执行 | AFL++ (插桩) + KLEE | 基于exploit信息调整种子 |
 | 有源码 + 大程序 | 白盒fuzzing + 静态分析 | AFL++ (插桩) + 手工审计 | 重点分析exploit提及的函数 |
 | 无源码 + 小程序 | 黑盒fuzzing + 动态分析 | AFL++ (QEMU) + GDB | 使用exploit编译选项重构环境 |
