@@ -15,9 +15,13 @@ export function SubmitButton({ isDisabled, onClick }: SubmitButtonProps) {
       disabled={isDisabled}
       onClick={onClick}
       type="submit"
-      className="border border-white rounded-lg w-6 h-6 hover:bg-neutral-500 focus:bg-neutral-500 flex items-center justify-center cursor-pointer"
+      className="border border-white rounded-lg w-6 h-6 flex items-center justify-center cursor-pointer apple-transition 
+                 hover:bg-neutral-500 hover:border-neutral-300 hover:scale-105
+                 focus:bg-primary/20 focus:border-primary focus:ring-2 focus:ring-primary/40 focus:outline-none
+                 active:scale-95
+                 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-white disabled:hover:scale-100"
     >
-      <ArrowSendIcon />
+      <ArrowSendIcon className="transition-transform duration-200" />
     </button>
   );
 }

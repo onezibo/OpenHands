@@ -56,15 +56,17 @@ function SettingsScreen() {
       data-testid="settings-screen"
       className="container-glass h-full flex flex-col"
     >
-              <header className="px-3 py-1.5 border-b border-gray-700 flex items-center gap-2">
-          <SettingsIcon width={16} height={16} className="text-primary" />
-          <h1 className="text-sm leading-6 font-semibold text-white">{t(I18nKey.SETTINGS$TITLE)}</h1>
-        </header>
+      <header className="px-3 py-1.5 border-b border-gray-700 flex items-center gap-2">
+        <SettingsIcon width={16} height={16} className="text-primary" />
+        <h1 className="text-sm leading-6 font-semibold text-white">
+          {t(I18nKey.SETTINGS$TITLE)}
+        </h1>
+      </header>
 
-        <nav
-          data-testid="settings-navbar"
-          className="flex items-end gap-6 px-9 border-b border-gray-700"
-        >
+      <nav
+        data-testid="settings-navbar"
+        className="flex items-end gap-6 px-9 border-b border-gray-700"
+      >
         {navItems.map(({ to, text }) => (
           <NavLink
             end
@@ -78,7 +80,9 @@ function SettingsScreen() {
               )
             }
           >
-            <span className={cn("text-sm font-medium", "text-gray-200")}>{text}</span>
+            <span className={cn("text-sm font-medium", "text-gray-200")}>
+              {text}
+            </span>
           </NavLink>
         ))}
       </nav>

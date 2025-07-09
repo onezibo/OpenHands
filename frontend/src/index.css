@@ -253,3 +253,65 @@ code {
   opacity: 0.3;
   pointer-events: none;
 }
+
+/* 滚动条隐藏 */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* 响应式文本 */
+.text-responsive {
+  font-size: clamp(0.875rem, 2.5vw, 1rem);
+}
+
+/* 改进的毛玻璃容器 */
+.container-glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: var(--glass-shadow);
+}
+
+/* 改进的焦点指示器 */
+.focus-visible:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* 改进的按钮状态 */
+.btn-glass {
+  background: var(--glass-bg-light);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(16px) saturate(150%);
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.btn-glass:hover {
+  background: var(--glass-bg);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(10, 132, 255, 0.2);
+}
+
+.btn-glass:active {
+  transform: translateY(0);
+}
+
+/* 改进的输入框状态 */
+.input-glass {
+  background: var(--glass-bg-light);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(16px) saturate(150%);
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.input-glass:focus {
+  background: var(--glass-bg);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.1);
+}

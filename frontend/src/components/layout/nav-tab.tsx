@@ -36,7 +36,14 @@ export function NavTab({
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2">
             <div className={cn(isActive && "text-primary")}>{icon}</div>
-            <span className={cn(isActive && "text-primary font-semibold", "text-gray-200 font-medium")}>{label}</span>
+            <span
+              className={cn(
+                isActive && "text-primary font-semibold",
+                "text-gray-200 font-medium",
+              )}
+            >
+              {label}
+            </span>
             {isBeta && <BetaBadge />}
           </div>
           <div className="flex items-center gap-2">

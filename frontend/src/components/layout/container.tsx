@@ -25,12 +25,13 @@ export function Container({
   return (
     <div
       className={clsx(
-        "container-glass flex flex-col h-full apple-transition",
+        "glass-apple flex flex-col h-full apple-transition",
+        "rounded-xl overflow-hidden backdrop-blur-xl",
         className,
       )}
     >
       {labels && (
-        <div className="flex text-xs h-[36px]">
+        <div className="flex text-xs h-[36px] overflow-x-auto scrollbar-hide">
           {labels.map(
             ({ label: l, to, icon, isBeta, isLoading, rightContent }) => (
               <NavTab
@@ -47,11 +48,13 @@ export function Container({
         </div>
       )}
       {!labels && label && (
-        <div className="px-2 h-[36px] border-b border-gray-700 text-xs flex items-center text-gray-200 font-medium">
+        <div className="px-2 h-[36px] border-b border-glass-dark text-xs flex items-center text-neutral-200 font-medium">
           {label}
         </div>
       )}
-      <div className="overflow-hidden flex-grow rounded-b-xl">{children}</div>
+      <div className="overflow-hidden flex-grow rounded-b-xl">
+        <div className="h-full w-full">{children}</div>
+      </div>
     </div>
   );
 }

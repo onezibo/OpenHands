@@ -109,10 +109,18 @@ export function ChatInput({
       data-testid="chat-input"
       className="flex items-end justify-end grow gap-1 min-h-6 w-full"
     >
+      <div id="chat-input-help" className="sr-only">
+        {t(
+          "CHAT_INPUT$HELP_TEXT",
+          "Type your message here. Press Enter to send, Shift+Enter for new line. You can drag and drop files or paste images.",
+        )}
+      </div>
       <TextareaAutosize
         ref={textareaRef}
         name={name}
         placeholder={t(I18nKey.SUGGESTIONS$WHAT_TO_BUILD)}
+        aria-label={t(I18nKey.SUGGESTIONS$WHAT_TO_BUILD)}
+        aria-describedby="chat-input-help"
         onKeyDown={handleKeyPress}
         onChange={handleChange}
         onFocus={onFocus}
@@ -126,8 +134,9 @@ export function ChatInput({
         maxRows={maxRows}
         data-dragging-over={isDraggingOver}
         className={cn(
-          "grow text-sm self-center placeholder:text-neutral-400 text-white resize-none outline-hidden ring-0",
-          "transition-all duration-200 ease-in-out",
+          "grow text-sm self-center placeholder:text-neutral-300 text-white resize-none outline-hidden ring-0",
+          "apple-transition", // 使用统一的过渡效果
+          "focus:ring-2 focus:ring-primary/40 focus:border-primary rounded-lg px-2 py-1",
           isDraggingOver
             ? "bg-neutral-600/50 rounded-lg px-2"
             : "bg-transparent",
