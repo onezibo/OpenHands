@@ -389,7 +389,7 @@ def find_dangerous_functions(binary: str, include_moderate: bool = True) -> str:
     results.append(f'目标文件: {binary}')
     results.append('')
 
-    found_functions = {'critical': [], 'high': [], 'moderate': []}
+    found_functions: dict[str, list[str]] = {'critical': [], 'high': [], 'moderate': []}
 
     # 检查导入的函数（动态链接）
     try:
@@ -406,20 +406,22 @@ def find_dangerous_functions(binary: str, include_moderate: bool = True) -> str:
                 for func in critical_functions:
                     if re.search(r'\\b' + func + r'\\b', line):
                         found_functions['critical'].append(
-                            (func, '导入函数', line.strip())
+                            f'{func} (导入函数): {line.strip()}'
                         )
 
                 # 检查高风险函数
                 for func in high_risk_functions:
                     if re.search(r'\\b' + func + r'\\b', line):
-                        found_functions['high'].append((func, '导入函数', line.strip()))
+                        found_functions['high'].append(
+                            f'{func} (导入函数): {line.strip()}'
+                        )
 
                 # 检查中等风险函数
                 if include_moderate:
                     for func in moderate_risk_functions:
                         if re.search(r'\\b' + func + r'\\b', line):
                             found_functions['moderate'].append(
-                                (func, '导入函数', line.strip())
+                                f'{func} (导入函数): {line.strip()}'
                             )
 
     except Exception as e:
@@ -438,20 +440,22 @@ def find_dangerous_functions(binary: str, include_moderate: bool = True) -> str:
                 for func in critical_functions:
                     if f'{func}@plt' in line:
                         found_functions['critical'].append(
-                            (func, 'PLT调用', line.strip())
+                            f'{func} (PLT调用): {line.strip()}'
                         )
 
                 # 检查高风险函数
                 for func in high_risk_functions:
                     if f'{func}@plt' in line:
-                        found_functions['high'].append((func, 'PLT调用', line.strip()))
+                        found_functions['high'].append(
+                            f'{func} (PLT调用): {line.strip()}'
+                        )
 
                 # 检查中等风险函数
                 if include_moderate:
                     for func in moderate_risk_functions:
                         if f'{func}@plt' in line:
                             found_functions['moderate'].append(
-                                (func, 'PLT调用', line.strip())
+                                f'{func} (PLT调用): {line.strip()}'
                             )
 
     except Exception as e:
@@ -475,7 +479,8 @@ def find_dangerous_functions(binary: str, include_moderate: bool = True) -> str:
     if found_functions['critical']:
         results.append('=== 关键风险函数 (立即修复) ===')
         critical_set = set()
-        for func, source, detail in found_functions['critical']:
+        for func_info in found_functions['critical']:
+            func = func_info.split(' (')[0]  # 提取函数名
             if func not in critical_set:
                 critical_set.add(func)
                 results.append(f'⚠️  {func}')
@@ -496,7 +501,8 @@ def find_dangerous_functions(binary: str, include_moderate: bool = True) -> str:
     if found_functions['high']:
         results.append('=== 高风险函数 (优先修复) ===')
         high_set = set()
-        for func, source, detail in found_functions['high']:
+        for func_info in found_functions['high']:
+            func = func_info.split(' (')[0]  # 提取函数名
             if func not in high_set:
                 high_set.add(func)
                 results.append(f'⚠️  {func}')
@@ -518,7 +524,8 @@ def find_dangerous_functions(binary: str, include_moderate: bool = True) -> str:
     if include_moderate and found_functions['moderate']:
         results.append('=== 中等风险函数 (建议审查) ===')
         moderate_set = set()
-        for func, source, detail in found_functions['moderate']:
+        for func_info in found_functions['moderate']:
+            func = func_info.split(' (')[0]  # 提取函数名
             if func not in moderate_set:
                 moderate_set.add(func)
                 results.append(f'ℹ️  {func}')

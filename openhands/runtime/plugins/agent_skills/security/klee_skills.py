@@ -301,7 +301,7 @@ def analyze_klee_results(output_dir: str, detailed: bool = True) -> str:
     # 分析错误类型
     if error_files and detailed:
         results.append('\\n=== 错误分析 ===')
-        error_types = {}
+        error_types: dict[str, list[str]] = {}
 
         for err_file in error_files[:10]:  # 只分析前10个错误
             try:
@@ -442,14 +442,14 @@ def generate_test_cases(
 
                 # 显示对象信息
                 for obj in objects:
-                    if obj['name'] and obj['size'] > 0:
-                        results.append(
-                            f'  对象: {obj["name"]}, 大小: {obj["size"]} bytes'
-                        )
-                        if obj['data']:
+                    obj_size = obj.get('size', 0)
+                    if obj['name'] and isinstance(obj_size, int) and obj_size > 0:
+                        results.append(f'  对象: {obj["name"]}, 大小: {obj_size} bytes')
+                        obj_data = obj.get('data', '')
+                        if obj_data and isinstance(obj_data, str):
                             # 显示数据的可读形式
-                            data_preview = obj['data'][:50]
-                            if len(obj['data']) > 50:
+                            data_preview = obj_data[:50]
+                            if len(obj_data) > 50:
                                 data_preview += '...'
                             results.append(f'  数据: {data_preview}')
 
@@ -471,16 +471,18 @@ def generate_test_cases(
                         )
                         try:
                             # 简单的十六进制转换（ktest-tool输出格式）
-                            hex_data = (
-                                objects[0]['data'].replace('\\\\x', '').replace(' ', '')
-                            )
-                            if all(c in '0123456789abcdefABCDEF' for c in hex_data):
-                                binary_data = bytes.fromhex(hex_data)
-                                with open(binary_file, 'wb') as bf:
-                                    bf.write(binary_data)
-                                results.append(
-                                    f'  已保存二进制输入: {os.path.basename(binary_file)}'
+                            obj_data = objects[0].get('data', '')
+                            if isinstance(obj_data, str):
+                                hex_data = obj_data.replace('\\\\x', '').replace(
+                                    ' ', ''
                                 )
+                                if all(c in '0123456789abcdefABCDEF' for c in hex_data):
+                                    binary_data = bytes.fromhex(hex_data)
+                                    with open(binary_file, 'wb') as bf:
+                                        bf.write(binary_data)
+                                    results.append(
+                                        f'  已保存二进制输入: {os.path.basename(binary_file)}'
+                                    )
                         except Exception:
                             pass  # 如果转换失败，跳过二进制文件生成
 
@@ -548,7 +550,7 @@ def check_klee_status(output_dir: str) -> str:
     # 检查最近更新时间
     try:
         latest_file = None
-        latest_time = 0
+        latest_time = 0.0
 
         for file_pattern in ['*.ktest', '*.err', 'run.stats']:
             files = glob.glob(os.path.join(output_dir, file_pattern))

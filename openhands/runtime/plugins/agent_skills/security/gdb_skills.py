@@ -8,7 +8,7 @@ import os
 import re
 import subprocess
 import tempfile
-from typing import Optional
+from typing import Any, Optional
 
 
 def analyze_crash(
@@ -178,9 +178,15 @@ def batch_analyze_crashes(
     results.append('=' * 80)
 
     # 按信号类型分组
-    signal_groups = {}
+    signal_groups: dict[str, list] = {}
     for crash in crash_summary:
-        signal = crash['info'].get('signal', 'Unknown')
+        signal = 'Unknown'  # 默认值
+        if isinstance(crash, dict):
+            crash_info_raw = crash.get('info', {})
+            if isinstance(crash_info_raw, dict):
+                crash_info = crash_info_raw
+                signal = crash_info.get('signal', 'Unknown')
+
         if signal not in signal_groups:
             signal_groups[signal] = []
         signal_groups[signal].append(crash)
@@ -188,9 +194,18 @@ def batch_analyze_crashes(
     for signal, crashes in signal_groups.items():
         results.append(f'\\n{signal} ({len(crashes)} 个崩溃):')
         for crash in crashes[:5]:  # 每组最多显示5个
-            results.append(
-                f'  - {crash["file"]}: {crash["info"].get("crash_function", "Unknown")}'
-            )
+            if isinstance(crash, dict):
+                crash_info_raw = crash.get('info', {})
+                crash_file_raw = crash.get('file', 'Unknown')
+                crash_file = (
+                    crash_file_raw if isinstance(crash_file_raw, str) else 'Unknown'
+                )
+                if isinstance(crash_info_raw, dict):
+                    crash_info = crash_info_raw
+                    crash_function = crash_info.get('crash_function', 'Unknown')
+                else:
+                    crash_function = 'Unknown'
+                results.append(f'  - {crash_file}: {crash_function}')
         if len(crashes) > 5:
             results.append(f'  ... 还有 {len(crashes) - 5} 个 {signal} 崩溃')
 
@@ -200,7 +215,7 @@ def batch_analyze_crashes(
     return '\\n'.join(results)
 
 
-def extract_crash_info(gdb_output: str) -> dict[str, str]:
+def extract_crash_info(gdb_output: str) -> dict[str, Any]:
     """从GDB输出中提取关键崩溃信息
 
     Args:
@@ -303,9 +318,9 @@ def extract_crash_info(gdb_output: str) -> dict[str, str]:
             break
 
     # 也检查明显的非法地址
-    if any(
-        addr in info['crash_address'].lower()
-        for addr in ['41414141', '42424242', '43434343']
+    crash_addr = info['crash_address']
+    if isinstance(crash_addr, str) and any(
+        addr in crash_addr.lower() for addr in ['41414141', '42424242', '43434343']
     ):
         info['control_hijack'] = True
 

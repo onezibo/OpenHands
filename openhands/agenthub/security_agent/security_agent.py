@@ -194,7 +194,7 @@ class SecurityAgent(CodeActAgent):
         input_dir: str,
         output_dir: str,
         timeout: int = 600,
-        additional_args: list[str] = None,
+        additional_args: Optional[list[str]] = None,
     ) -> bool:
         """启动AFL++模糊测试（智能管理版本）
 
@@ -234,7 +234,7 @@ class SecurityAgent(CodeActAgent):
                 # 清空状态历史
                 with self._progress_lock:
                     self._afl_state_history.clear()
-                    self._last_progress_time = time.time()
+                    self._last_progress_time = int(time.time())
             else:
                 logger.error('AFL++智能模糊测试启动失败')
                 self._afl_manager = None
@@ -268,7 +268,7 @@ class SecurityAgent(CodeActAgent):
             if current_time - self._last_progress_time >= 30:
                 progress_msg = f'进度更新: 执行{stats.total_execs}次，路径{stats.paths_found}个，速度{stats.exec_speed:.1f}/秒'
                 self._afl_state_history.append(progress_msg)
-                self._last_progress_time = current_time
+                self._last_progress_time = int(current_time)
 
     def get_afl_status(self) -> dict[str, Any]:
         """获取AFL++当前状态"""
@@ -320,7 +320,7 @@ class SecurityAgent(CodeActAgent):
         output_dir: str,
         timeout: int = 600,
         wait_timeout: Optional[int] = None,
-        additional_args: list[str] = None,
+        additional_args: Optional[list[str]] = None,
     ) -> dict[str, Any]:
         """启动fuzzing并等待crash（事件驱动，一体化方法）
 
@@ -374,7 +374,16 @@ class SecurityAgent(CodeActAgent):
         )
 
         # 阻塞等待crash
-        result = self._afl_manager.wait_for_crash(timeout=wait_timeout)
+        if self._afl_manager is not None:
+            result = self._afl_manager.wait_for_crash(timeout=wait_timeout)
+        else:
+            return {
+                'success': False,
+                'error': 'AFL管理器未初始化',
+                'crashed': False,
+                'crash_count': 0,
+                'crash_files': [],
+            }
 
         # 构建返回结果
         response = {

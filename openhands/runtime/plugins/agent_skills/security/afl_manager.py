@@ -13,7 +13,7 @@ import time
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.plugins.agent_skills.security.file_monitor import AFLCrashMonitor
@@ -71,9 +71,9 @@ class AFLOutputParser:
             'state': re.compile(r'fuzzing state\s*:\s*([a-zA-Z\s]+)'),
         }
 
-    def parse_line(self, line: str) -> dict[str, Any]:
+    def parse_line(self, line: str) -> dict[str, Union[int, float, str]]:
         """解析单行AFL++输出"""
-        results = {}
+        results: dict[str, Union[int, float, str]] = {}
 
         for key, pattern in self.patterns.items():
             match = pattern.search(line)
@@ -83,7 +83,7 @@ class AFLOutputParser:
                     results['pending_fav'] = int(match.group(1))
                     results['pending_total'] = int(match.group(2))
                 elif key in ['exec_speed', 'coverage', 'stability']:
-                    results[key] = float(match.group(1))
+                    results[key] = int(float(match.group(1)))
                 elif key in [
                     'total_execs',
                     'paths_found',
@@ -91,9 +91,23 @@ class AFLOutputParser:
                     'hangs',
                     'cycles_done',
                 ]:
-                    results[key] = int(match.group(1))
+                    raw_value = match.group(1).strip()
+                    try:
+                        results[key] = int(raw_value)
+                    except ValueError:
+                        results[key] = 0
+                elif key in ['run_time', 'last_find', 'state']:
+                    results[key] = str(match.group(1)).strip()
                 else:
-                    results[key] = match.group(1).strip()
+                    # 对于其他情况，尝试转换为数字，失败则使用字符串
+                    raw_value = str(match.group(1)).strip()
+                    try:
+                        results[key] = int(raw_value)
+                    except ValueError:
+                        try:
+                            results[key] = float(raw_value)
+                        except ValueError:
+                            results[key] = raw_value
 
         return results
 
@@ -205,7 +219,9 @@ class AFLProcessManager:
         logger.info(f'AFL++进程管理器初始化完成 - 输出目录: {self.output_dir}')
 
     def start_fuzzing(
-        self, additional_args: list[str] = None, env_vars: dict[str, str] = None
+        self,
+        additional_args: Optional[list[str]] = None,
+        env_vars: Optional[dict[str, str]] = None,
     ) -> bool:
         """启动AFL++模糊测试
 
@@ -338,19 +354,22 @@ class AFLProcessManager:
 
         try:
             while not self._stop_monitoring.is_set() and self.process.poll() is None:
-                line = self.process.stdout.readline()
-                if not line:
+                if self.process.stdout is not None:
+                    line = self.process.stdout.readline()
+                    if not line:
+                        break
+
+                    line = line.strip()
+                    if line:
+                        # 解析输出更新状态
+                        parsed = self.parser.parse_line(line)
+                        if parsed:
+                            self._update_stats_from_output(parsed)
+
+                        # 检测状态变化
+                        self._detect_state_changes(line)
+                else:
                     break
-
-                line = line.strip()
-                if line:
-                    # 解析输出更新状态
-                    parsed = self.parser.parse_line(line)
-                    if parsed:
-                        self._update_stats_from_output(parsed)
-
-                    # 检测状态变化
-                    self._detect_state_changes(line)
 
         except Exception as e:
             logger.error(f'监控AFL++输出时出错: {e}')

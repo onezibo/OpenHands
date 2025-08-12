@@ -279,7 +279,16 @@ def collect_crashes(output_dir: str, analyze_limit: int = 50) -> str:
         return '未发现任何崩溃样本'
 
     # 按大小排序，有助于分析
-    crashes.sort(key=lambda x: x['size'])
+    def safe_size_getter(x):
+        size_val = x.get('size', 0)
+        if isinstance(size_val, (int, float)):
+            return int(size_val)
+        elif isinstance(size_val, str) and size_val.isdigit():
+            return int(size_val)
+        else:
+            return 0
+
+    crashes.sort(key=safe_size_getter)
 
     # 生成摘要
     summary = [f'发现 {len(crashes)} 个崩溃样本']
