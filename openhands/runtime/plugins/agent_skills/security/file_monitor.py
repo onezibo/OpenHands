@@ -9,14 +9,12 @@ import time
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 try:
-    import inotify_simple
-
-    INOTIFY_AVAILABLE = True
+    import inotify_simple  # type: ignore[import-not-found]
 except ImportError:
-    INOTIFY_AVAILABLE = False
+    inotify_simple = None  # type: ignore[assignment]
 
 from openhands.core.logger import openhands_logger as logger
 
@@ -55,7 +53,7 @@ class FileSystemMonitor:
             use_polling: 强制使用轮询模式（忽略inotify）
             poll_interval: 轮询间隔（秒）
         """
-        self.use_polling = use_polling or not INOTIFY_AVAILABLE
+        self.use_polling = use_polling or (inotify_simple is None)
         self.poll_interval = poll_interval
 
         # 监控状态
@@ -64,7 +62,7 @@ class FileSystemMonitor:
         self._monitor_thread: Optional[threading.Thread] = None
 
         # inotify相关
-        self._inotify = None
+        self._inotify: Optional[Any] = None
         self._watch_descriptors: dict[str, int] = {}
 
         # 轮询相关
@@ -84,7 +82,7 @@ class FileSystemMonitor:
         self,
         path: str,
         event_handler: Callable[[FileEvent], None],
-        watch_key: str = None,
+        watch_key: Optional[str] = None,
         recursive: bool = False,
     ) -> bool:
         """添加监控路径
@@ -98,12 +96,12 @@ class FileSystemMonitor:
         Returns:
             bool: 添加是否成功
         """
-        path = Path(path)
-        if not path.exists():
-            logger.warning(f'监控路径不存在: {path}')
+        path_obj = Path(path)
+        if not path_obj.exists():
+            logger.warning(f'监控路径不存在: {path_obj}')
             return False
 
-        watch_key = watch_key or str(path)
+        watch_key = watch_key or str(path_obj)
 
         try:
             with self._event_lock:
@@ -119,20 +117,24 @@ class FileSystemMonitor:
                         self._last_states[watch_key] = {}
 
                     # 添加监控路径
-                    if path.is_dir():
-                        self._polling_paths[watch_key].add(path)
+                    if path_obj.is_dir():
+                        self._polling_paths[watch_key].add(path_obj)
                         if recursive:
-                            for subpath in path.rglob('*'):
+                            for subpath in path_obj.rglob('*'):
                                 if subpath.is_dir():
                                     self._polling_paths[watch_key].add(subpath)
                     else:
-                        self._polling_paths[watch_key].add(path.parent)
+                        self._polling_paths[watch_key].add(path_obj.parent)
 
                     # 初始化状态
                     self._update_polling_state(watch_key)
 
                 else:
-                    # inotify模式
+                    # inotify模式（仅当 inotify_simple 可用且未启用轮询时才会进入）
+                    assert inotify_simple is not None, (
+                        'inotify_simple 不可用，但进入了 inotify 模式'
+                    )
+
                     if not self._inotify:
                         self._inotify = inotify_simple.INotify()
 
@@ -145,25 +147,27 @@ class FileSystemMonitor:
                         | inotify_simple.flags.MOVED_FROM
                     )
 
-                    if path.is_dir():
-                        wd = self._inotify.add_watch(str(path), flags)
+                    if path_obj.is_dir():
+                        wd = self._inotify.add_watch(str(path_obj), flags)
                         self._watch_descriptors[watch_key] = wd
 
                         if recursive:
-                            for subpath in path.rglob('*'):
+                            for subpath in path_obj.rglob('*'):
                                 if subpath.is_dir():
-                                    sub_key = f'{watch_key}_{subpath.relative_to(path)}'
+                                    sub_key = (
+                                        f'{watch_key}_{subpath.relative_to(path_obj)}'
+                                    )
                                     sub_wd = self._inotify.add_watch(
                                         str(subpath), flags
                                     )
                                     self._watch_descriptors[sub_key] = sub_wd
                     else:
                         # 监控文件的父目录
-                        wd = self._inotify.add_watch(str(path.parent), flags)
+                        wd = self._inotify.add_watch(str(path_obj.parent), flags)
                         self._watch_descriptors[watch_key] = wd
 
             logger.info(
-                f'添加文件监控: {path} (键: {watch_key}, 模式: {"轮询" if self.use_polling else "inotify"})'
+                f'添加文件监控: {path_obj} (键: {watch_key}, 模式: {"轮询" if self.use_polling else "inotify"})'
             )
             return True
 
@@ -389,8 +393,11 @@ class FileSystemMonitor:
         # 更新状态
         self._last_states[watch_key] = current_state
 
-    def _handle_inotify_event(self, event):
+    def _handle_inotify_event(self, event: Any):
         """处理inotify事件"""
+        if inotify_simple is None:
+            return
+
         try:
             event_path = (
                 Path(event.path) / event.name if event.name else Path(event.path)
@@ -445,7 +452,7 @@ class FileSystemMonitor:
         except Exception as e:
             logger.error(f'发出文件事件失败: {e}')
 
-    def get_monitoring_status(self) -> dict[str, any]:
+    def get_monitoring_status(self) -> dict[str, Any]:
         """获取监控状态"""
         return {
             'monitoring': self._monitoring,
@@ -469,7 +476,9 @@ class AFLCrashMonitor:
     """
 
     def __init__(
-        self, crashes_dir: str, on_crash_found: Callable[[list[Path]], None] = None
+        self,
+        crashes_dir: str,
+        on_crash_found: Optional[Callable[[list[Path]], None]] = None,
     ):
         """初始化AFL崩溃监控器
 
@@ -559,7 +568,7 @@ class AFLCrashMonitor:
                     logger.info(f'检测到新的AFL崩溃文件: {event.file_path}')
 
                     # 触发回调
-                    if self.on_crash_found:
+                    if self.on_crash_found is not None:
                         self.on_crash_found(list(self._crash_files))
 
         except Exception as e:
