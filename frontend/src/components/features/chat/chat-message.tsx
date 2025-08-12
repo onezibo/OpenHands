@@ -1,6 +1,7 @@
 import React from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import { code } from "../markdown/code";
 import { cn } from "#/utils/utils";
 import { ul, ol } from "../markdown/list";
@@ -54,7 +55,7 @@ export function ChatMessage({
       className={cn(
         "rounded-xl relative w-fit",
         "flex flex-col gap-2",
-        type === "user" && " max-w-[305px] p-4 bg-tertiary self-end",
+        type === "user" && " p-4 bg-tertiary self-end",
         type === "agent" && "mt-6 max-w-full bg-transparent",
       )}
     >
@@ -85,21 +86,25 @@ export function ChatMessage({
         />
       </div>
 
-      <div className="text-sm break-words flex">
-        <div>
-          <Markdown
-            components={{
-              code,
-              ul,
-              ol,
-              a: anchor,
-              p: paragraph,
-            }}
-            remarkPlugins={[remarkGfm]}
-          >
-            {message}
-          </Markdown>
-        </div>
+      <div
+        className="text-sm"
+        style={{
+          whiteSpace: "normal",
+          wordBreak: "break-word",
+        }}
+      >
+        <Markdown
+          components={{
+            code,
+            ul,
+            ol,
+            a: anchor,
+            p: paragraph,
+          }}
+          remarkPlugins={[remarkGfm, remarkBreaks]}
+        >
+          {message}
+        </Markdown>
       </div>
       {children}
     </article>

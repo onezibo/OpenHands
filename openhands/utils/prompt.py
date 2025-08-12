@@ -15,6 +15,7 @@ class RuntimeInfo:
     available_hosts: dict[str, int] = field(default_factory=dict)
     additional_agent_instructions: str = ''
     custom_secrets_descriptions: dict[str, str] = field(default_factory=dict)
+    working_dir: str = ''
 
 
 @dataclass
@@ -23,6 +24,7 @@ class RepositoryInfo:
 
     repo_name: str | None = None
     repo_directory: str | None = None
+    branch_name: str | None = None
 
 
 @dataclass
@@ -89,7 +91,10 @@ class PromptManager:
             return Template(file.read())
 
     def get_system_message(self) -> str:
-        return self.system_template.render().strip()
+        from openhands.agenthub.codeact_agent.tools.prompt import refine_prompt
+
+        system_message = self.system_template.render().strip()
+        return refine_prompt(system_message)
 
     def get_example_user_message(self) -> str:
         """This is an initial user message that can be provided to the agent

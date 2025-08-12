@@ -75,14 +75,19 @@ from openhands.events.observation import (
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.storage.files import FileStore
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
     "Please click on resume button if you'd like to continue, or start a new task."
 )
-ERROR_ACTION_NOT_EXECUTED_ID = 'AGENT_ERROR$ERROR_ACTION_NOT_EXECUTED'
-ERROR_ACTION_NOT_EXECUTED = 'The action has not been executed. This may have occurred because the user pressed the stop button, or because the runtime system crashed and restarted due to resource constraints. Any previously established system state, dependencies, or environment variables may have been lost.'
+ERROR_ACTION_NOT_EXECUTED_STOPPED_ID = 'AGENT_ERROR$ERROR_ACTION_NOT_EXECUTED_STOPPED'
+ERROR_ACTION_NOT_EXECUTED_ERROR_ID = 'AGENT_ERROR$ERROR_ACTION_NOT_EXECUTED_ERROR'
+ERROR_ACTION_NOT_EXECUTED_STOPPED = (
+    'Stop button pressed. The action has not been executed.'
+)
+ERROR_ACTION_NOT_EXECUTED_ERROR = 'The action has not been executed due to a runtime error. The runtime system may have crashed and restarted due to resource constraints. Any previously established system state, dependencies, or environment variables may have been lost.'
 
 
 class AgentController:
@@ -248,10 +253,10 @@ class AgentController:
         self.state.last_error = f'{type(e).__name__}: {str(e)}'
 
         if self.status_callback is not None:
-            err_id = ''
+            runtime_status = RuntimeStatus.ERROR
             if isinstance(e, AuthenticationError):
-                err_id = 'STATUS$ERROR_LLM_AUTHENTICATION'
-                self.state.last_error = err_id
+                runtime_status = RuntimeStatus.ERROR_LLM_AUTHENTICATION
+                self.state.last_error = runtime_status.value
             elif isinstance(
                 e,
                 (
@@ -260,20 +265,20 @@ class AgentController:
                     APIError,
                 ),
             ):
-                err_id = 'STATUS$ERROR_LLM_SERVICE_UNAVAILABLE'
-                self.state.last_error = err_id
+                runtime_status = RuntimeStatus.ERROR_LLM_SERVICE_UNAVAILABLE
+                self.state.last_error = runtime_status.value
             elif isinstance(e, InternalServerError):
-                err_id = 'STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR'
-                self.state.last_error = err_id
+                runtime_status = RuntimeStatus.ERROR_LLM_INTERNAL_SERVER_ERROR
+                self.state.last_error = runtime_status.value
             elif isinstance(e, BadRequestError) and 'ExceededBudget' in str(e):
-                err_id = 'STATUS$ERROR_LLM_OUT_OF_CREDITS'
-                self.state.last_error = err_id
+                runtime_status = RuntimeStatus.ERROR_LLM_OUT_OF_CREDITS
+                self.state.last_error = runtime_status.value
             elif isinstance(e, ContentPolicyViolationError) or (
                 isinstance(e, BadRequestError)
                 and 'ContentPolicyViolationError' in str(e)
             ):
-                err_id = 'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION'
-                self.state.last_error = err_id
+                runtime_status = RuntimeStatus.ERROR_LLM_CONTENT_POLICY_VIOLATION
+                self.state.last_error = runtime_status.value
             elif isinstance(e, RateLimitError):
                 # Check if this is the final retry attempt
                 if (
@@ -283,14 +288,14 @@ class AgentController:
                 ):
                     # All retries exhausted, set to ERROR state with a special message
                     self.state.last_error = (
-                        'CHAT_INTERFACE$AGENT_RATE_LIMITED_STOPPED_MESSAGE'
+                        RuntimeStatus.AGENT_RATE_LIMITED_STOPPED_MESSAGE.value
                     )
                     await self.set_agent_state_to(AgentState.ERROR)
                 else:
                     # Still retrying, set to RATE_LIMITED state
                     await self.set_agent_state_to(AgentState.RATE_LIMITED)
                 return
-            self.status_callback('error', err_id, self.state.last_error)
+            self.status_callback('error', runtime_status, self.state.last_error)
 
         # Set the agent state to ERROR after storing the reason
         await self.set_agent_state_to(AgentState.ERROR)
@@ -551,9 +556,17 @@ class AgentController:
 
             # make a new ErrorObservation with the tool call metadata
             if not found_observation:
+                # Use different messages and IDs based on whether the agent was stopped by user or due to error
+                if self.state.agent_state == AgentState.STOPPED:
+                    error_content = ERROR_ACTION_NOT_EXECUTED_STOPPED
+                    error_id = ERROR_ACTION_NOT_EXECUTED_STOPPED_ID
+                else:  # AgentState.ERROR
+                    error_content = ERROR_ACTION_NOT_EXECUTED_ERROR
+                    error_id = ERROR_ACTION_NOT_EXECUTED_ERROR_ID
+
                 obs = ErrorObservation(
-                    content=ERROR_ACTION_NOT_EXECUTED,
-                    error_id=ERROR_ACTION_NOT_EXECUTED_ID,
+                    content=error_content,
+                    error_id=error_id,
                 )
                 obs.tool_call_metadata = self._pending_action.tool_call_metadata
                 obs._cause = self._pending_action.id  # type: ignore[attr-defined]
@@ -579,14 +592,17 @@ class AgentController:
         if new_state == self.state.agent_state:
             return
 
+        # Store old state for control limits check
+        old_state = self.state.agent_state
+
+        # Update agent state BEFORE calling _reset() so _reset() sees the correct state
+        self.state.agent_state = new_state
+
         if new_state in (AgentState.STOPPED, AgentState.ERROR):
             self._reset()
 
         # User is allowing to check control limits and expand them if applicable
-        if (
-            self.state.agent_state == AgentState.ERROR
-            and new_state == AgentState.RUNNING
-        ):
+        if old_state == AgentState.ERROR and new_state == AgentState.RUNNING:
             self.state_tracker.maybe_increase_control_flags_limits(self.headless_mode)
 
         if self._pending_action is not None and (
@@ -601,8 +617,6 @@ class AgentController:
             self._pending_action.confirmation_state = confirmation_state  # type: ignore[attr-defined]
             self._pending_action._id = None  # type: ignore[attr-defined]
             self.event_stream.add_event(self._pending_action, EventSource.AGENT)
-
-        self.state.agent_state = new_state
 
         # Create observation with reason field if it's an error state
         reason = ''
@@ -656,6 +670,7 @@ class AgentController:
         # Take a snapshot of the current metrics before starting the delegate
         state = State(
             session_id=self.id.removesuffix('-delegate'),
+            user_id=self.user_id,
             inputs=action.inputs or {},
             iteration_flag=self.state.iteration_flag,
             budget_flag=self.state.budget_flag,

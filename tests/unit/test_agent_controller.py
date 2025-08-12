@@ -44,6 +44,7 @@ from openhands.runtime.base import Runtime
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.storage.memory import InMemoryFileStore
 
 
@@ -229,12 +230,15 @@ async def test_react_to_content_policy_violation(
     # Verify the status callback was called with correct parameters
     mock_status_callback.assert_called_once_with(
         'error',
-        'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION',
-        'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION',
+        RuntimeStatus.ERROR_LLM_CONTENT_POLICY_VIOLATION,
+        RuntimeStatus.ERROR_LLM_CONTENT_POLICY_VIOLATION.value,
     )
 
     # Verify the state was updated correctly
-    assert controller.state.last_error == 'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION'
+    assert (
+        controller.state.last_error
+        == RuntimeStatus.ERROR_LLM_CONTENT_POLICY_VIOLATION.value
+    )
     assert controller.state.agent_state == AgentState.ERROR
 
     await controller.close()
@@ -599,8 +603,55 @@ async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_s
     assert isinstance(error_obs, ErrorObservation)
     assert (
         error_obs.content
-        == 'The action has not been executed. This may have occurred because the user pressed the stop button, or because the runtime system crashed and restarted due to resource constraints. Any previously established system state, dependencies, or environment variables may have been lost.'
+        == 'The action has not been executed due to a runtime error. The runtime system may have crashed and restarted due to resource constraints. Any previously established system state, dependencies, or environment variables may have been lost.'
     )
+    assert error_obs.tool_call_metadata == pending_action.tool_call_metadata
+    assert error_obs._cause == pending_action.id
+    assert source == EventSource.AGENT
+
+    # Verify that pending action was reset
+    assert controller._pending_action is None
+
+    # Verify that agent.reset() was called
+    mock_agent.reset.assert_called_once()
+    await controller.close()
+
+
+@pytest.mark.asyncio
+async def test_reset_with_pending_action_stopped_state(mock_agent, mock_event_stream):
+    """Test reset() when there's a pending action and agent state is STOPPED."""
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        iteration_delta=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    mock_event_stream.add_event.assert_called_once()  # add SystemMessageAction
+    mock_event_stream.add_event.reset_mock()
+
+    # Create a pending action with tool call metadata
+    pending_action = CmdRunAction(command='test')
+    pending_action.tool_call_metadata = {
+        'function': 'test_function',
+        'args': {'arg1': 'value1'},
+    }
+    controller._pending_action = pending_action
+
+    # Set agent state to STOPPED
+    controller.state.agent_state = AgentState.STOPPED
+
+    # Call reset
+    controller._reset()
+
+    # Verify that an ErrorObservation was added to the event stream
+    mock_event_stream.add_event.assert_called_once()
+    args, kwargs = mock_event_stream.add_event.call_args
+    error_obs, source = args
+    assert isinstance(error_obs, ErrorObservation)
+    assert error_obs.content == 'Stop button pressed. The action has not been executed.'
     assert error_obs.tool_call_metadata == pending_action.tool_call_metadata
     assert error_obs._cause == pending_action.id
     assert source == EventSource.AGENT
@@ -829,13 +880,15 @@ async def test_notify_on_llm_retry(mock_agent, mock_event_stream, mock_status_ca
     )
 
     def notify_on_llm_retry(attempt, max_attempts):
-        controller.status_callback('info', 'STATUS$LLM_RETRY', ANY)
+        controller.status_callback('info', RuntimeStatus.LLM_RETRY, ANY)
 
     # Attach the retry listener to the agent's LLM
     controller.agent.llm.retry_listener = notify_on_llm_retry
 
     controller.agent.llm.retry_listener(1, 2)
-    controller.status_callback.assert_called_once_with('info', 'STATUS$LLM_RETRY', ANY)
+    controller.status_callback.assert_called_once_with(
+        'info', RuntimeStatus.LLM_RETRY, ANY
+    )
     await controller.close()
 
 
