@@ -36,7 +36,7 @@ env:
 jobs:
   trigger-job:
     name: Trigger remote eval job
-    if: ${{ (github.event_name == 'pull_request' && (github.event.label.name == 'run-eval-1' || github.event.label.name == 'run-eval-2' || github.event.label.name == 'run-eval-50' || github.event.label.name == 'run-eval-100')) || github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ ((github.event_name == 'pull_request' && (github.event.label.name == 'run-eval-1' || github.event.label.name == 'run-eval-2' || github.event.label.name == 'run-eval-50' || github.event.label.name == 'run-eval-100')) || github.event_name == 'release' || github.event_name == 'workflow_dispatch') && github.repository_owner == 'All-Hands-AI' && secrets.PAT_TOKEN != '' && secrets.SLACK_TOKEN != '' }}
     runs-on: blacksmith-4vcpu-ubuntu-2204
 
     steps:

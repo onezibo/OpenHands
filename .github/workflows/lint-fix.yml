@@ -28,7 +28,7 @@ jobs:
       - name: Install frontend dependencies
         run: |
           cd frontend
-          npm install --frozen-lockfile
+          npm ci
       - name: Fix frontend lint issues
         run: |
           cd frontend

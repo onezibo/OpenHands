@@ -8,6 +8,7 @@ on:
 
 jobs:
   stale:
+    if: github.repository_owner == 'All-Hands-AI'
     runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:
       - uses: actions/stale@v9

@@ -17,7 +17,7 @@ env:
 
 jobs:
   run-integration-tests:
-    if: github.event.label.name == 'integration-test' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    if: (github.event.label.name == 'integration-test' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.repository_owner == 'All-Hands-AI' && secrets.LLM_API_KEY != '' && secrets.LLM_BASE_URL != ''
     runs-on: blacksmith-4vcpu-ubuntu-2204
     permissions:
       contents: "read"

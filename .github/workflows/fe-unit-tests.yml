@@ -21,10 +21,10 @@ jobs:
   # Run frontend unit tests
   fe-test:
     name: FE Unit Tests
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        node-version: [22]
+        node-version: ['22.x']
       fail-fast: true
     steps:
       - name: Checkout

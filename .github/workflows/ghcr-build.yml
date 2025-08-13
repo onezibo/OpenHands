@@ -55,7 +55,7 @@ jobs:
   ghcr_build_app:
     name: Build App Image
     runs-on: blacksmith-4vcpu-ubuntu-2204
-    if: "!(github.event_name == 'push' && startsWith(github.ref, 'refs/tags/ext-v'))"
+    if: "!(github.event_name == 'push' && startsWith(github.ref, 'refs/tags/ext-v')) && github.repository_owner == 'All-Hands-AI'"
     permissions:
       contents: read
       packages: write
@@ -89,7 +89,7 @@ jobs:
   ghcr_build_runtime:
     name: Build Image
     runs-on: blacksmith-8vcpu-ubuntu-2204
-    if: "!(github.event_name == 'push' && startsWith(github.ref, 'refs/tags/ext-v'))"
+    if: "!(github.event_name == 'push' && startsWith(github.ref, 'refs/tags/ext-v')) && github.repository_owner == 'All-Hands-AI'"
     permissions:
       contents: read
       packages: write
@@ -170,6 +170,7 @@ jobs:
   test_runtime_root:
     name: RT Unit Tests (Root)
     needs: [ghcr_build_runtime, define-matrix]
+    if: github.repository_owner == 'All-Hands-AI'
     runs-on: blacksmith-8vcpu-ubuntu-2204
     strategy:
       fail-fast: false
@@ -232,6 +233,7 @@ jobs:
   # Run unit tests with the Docker runtime Docker images as openhands user
   test_runtime_oh:
     name: RT Unit Tests (openhands)
+    if: github.repository_owner == 'All-Hands-AI'
     runs-on: blacksmith-8vcpu-ubuntu-2204
     needs: [ghcr_build_runtime, define-matrix]
     strategy:
@@ -294,7 +296,7 @@ jobs:
   # prerequisites have been cancelled or failed so merging is disallowed, otherwise Github considers "skipped" as "success"
   runtime_tests_check_success:
     name: All Runtime Tests Passed
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && github.repository_owner == 'All-Hands-AI' }}
     runs-on: blacksmith-4vcpu-ubuntu-2204
     needs: [test_runtime_root, test_runtime_oh]
     steps:
@@ -303,7 +305,7 @@ jobs:
 
   runtime_tests_check_fail:
     name: All Runtime Tests Passed
-    if: ${{ cancelled() || contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+    if: ${{ (cancelled() || contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && github.repository_owner == 'All-Hands-AI' }}
     runs-on: blacksmith-4vcpu-ubuntu-2204
     needs: [test_runtime_root, test_runtime_oh]
     steps:
@@ -313,7 +315,7 @@ jobs:
           exit 1
   update_pr_description:
     name: Update PR Description
-    if: github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && github.actor != 'dependabot[bot]'
+    if: github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && github.actor != 'dependabot[bot]' && github.repository_owner == 'All-Hands-AI'
     needs: [ghcr_build_runtime]
     runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:

@@ -19,7 +19,7 @@ jobs:
   # Run python tests on Linux
   test-on-linux:
     name: Python Tests on Linux
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: ubuntu-22.04
     env:
       INSTALL_DOCKER: '0' # Set to '0' to skip Docker installation
     strategy:
@@ -36,8 +36,11 @@ jobs:
         uses: useblacksmith/setup-node@v5
         with:
           node-version: '22.x'
-      - name: Install poetry via pipx
-        run: pipx install poetry
+      - name: Ensure pipx and install poetry
+        run: |
+          python -m pip install --user pipx
+          python -m pipx ensurepath
+          python -m pipx install poetry
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
